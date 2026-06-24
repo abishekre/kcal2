@@ -14,7 +14,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [mode, setMode] = useState('sign-in'); // 'sign-in', 'sign-up', 'magic-link'
+  const [mode, setMode] = useState('sign-in'); // 'sign-in', 'sign-up', 'magic-link', 'sign-in-code'
   const [showPassword, setShowPassword] = useState(false);
   const [shake, setShake] = useState(0);
 
@@ -27,7 +27,7 @@ export default function Auth() {
     if (mode === 'sign-up') {
       const { error } = await supabase.auth.resend({ type: 'signup', email });
       resendError = error;
-    } else {
+    } else if (mode === 'sign-in-code') {
       const { error } = await supabase.auth.signInWithOtp({ email });
       resendError = error;
     }
@@ -52,6 +52,15 @@ export default function Auth() {
     let authError;
 
     if (mode === 'magic-link') {
+      const { error } = await supabase.auth.signInWithOtp({ 
+        email, 
+        options: { emailRedirectTo: window.location.origin } 
+      });
+      authError = error;
+      if (!error) {
+        setSuccess('Magic Link sent! Check your email to log in.');
+      }
+    } else if (mode === 'sign-in-code') {
       if (!otpSent) {
         const { error } = await supabase.auth.signInWithOtp({ email });
         authError = error;
@@ -97,7 +106,7 @@ export default function Auth() {
       setError(authError.message);
       setShake(s => s + 1);
       triggerHaptic('error');
-    } else if (otpSent) {
+    } else if (otpSent || mode === 'magic-link') {
       triggerHaptic('success');
     }
     setLoading(false);
@@ -117,7 +126,8 @@ export default function Auth() {
           <h1 className="text-3xl font-black tracking-tight mb-2 text-gray-900 dark:text-white">Kcal</h1>
           <p className="text-gray-500 dark:text-gray-400 font-medium text-center">
             {mode === 'sign-up' ? "Create an account to save your data." : 
-             mode === 'magic-link' ? "Sign in instantly with a code." : 
+             mode === 'magic-link' ? "Get a login link sent to your inbox." : 
+             mode === 'sign-in-code' ? "Sign in instantly with a code." : 
              "Welcome back. Time to log."}
           </p>
         </motion.div>
@@ -151,7 +161,7 @@ export default function Auth() {
           </div>
           
           <AnimatePresence>
-            {mode !== 'magic-link' && (
+            {(mode === 'sign-in' || mode === 'sign-up') && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -166,7 +176,7 @@ export default function Auth() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={otpSent}
                   className="w-full pl-12 pr-12 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
-                  required={mode !== 'magic-link'}
+                  required={mode === 'sign-in' || mode === 'sign-up'}
                   minLength={6}
                 />
                 <button
@@ -179,7 +189,7 @@ export default function Auth() {
               </motion.div>
             )}
 
-            {(mode === 'magic-link' || mode === 'sign-up') && otpSent && (
+            {(mode === 'sign-in-code' || mode === 'sign-up') && otpSent && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -203,7 +213,7 @@ export default function Auth() {
             )}
           </AnimatePresence>
 
-          {(mode === 'magic-link' || mode === 'sign-up') && otpSent && (
+          {(mode === 'sign-in-code' || mode === 'sign-up') && otpSent && (
             <div className="flex justify-between items-center px-2 mt-2">
               <span className="text-[12px] font-bold text-gray-400">Didn't receive a code?</span>
               <button 
@@ -238,46 +248,33 @@ export default function Auth() {
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : (
               mode === 'sign-up' ? (otpSent ? "Verify Code" : "Create Account") : 
-              mode === 'magic-link' ? (otpSent ? "Verify Code" : "Send Code") : "Sign In"
+              mode === 'sign-in-code' ? (otpSent ? "Verify Code" : "Send Code") : 
+              mode === 'magic-link' ? "Send Magic Link" : 
+              "Sign In"
             )}
           </button>
         </motion.form>
 
-        <div className="mt-8 flex flex-col items-center gap-3">
-          {mode === 'magic-link' ? (
-            <>
-              <button 
-                type="button"
-                onClick={() => { setMode('sign-in'); setError(null); setSuccess(null); setOtpSent(false); }}
-                className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1"
-              >
-                Use Password instead <ArrowRight size={14} />
-              </button>
-              <button 
-                type="button"
-                onClick={() => { setMode('sign-up'); setError(null); setSuccess(null); setOtpSent(false); }}
-                className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm mt-4"
-              >
-                Don't have an account? Sign up
-              </button>
-            </>
-          ) : (
-            <>
-              <button 
-                type="button"
-                onClick={() => { setMode('magic-link'); setError(null); setSuccess(null); setOtpSent(false); }}
-                className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1"
-              >
-                Sign in with Code instead <ArrowRight size={14} />
-              </button>
-              <button 
-                type="button"
-                onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setError(null); setSuccess(null); setOtpSent(false); }}
-                className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm mt-4"
-              >
-                {mode === 'sign-up' ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-              </button>
-            </>
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-[#1f1f23] flex flex-col items-center gap-4 w-full">
+          {mode !== 'sign-in' && (
+            <button type="button" onClick={() => { setMode('sign-in'); setError(null); setSuccess(null); setOtpSent(false); }} className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1">
+              Sign In with Password <ArrowRight size={14} />
+            </button>
+          )}
+          {mode !== 'sign-up' && (
+            <button type="button" onClick={() => { setMode('sign-up'); setError(null); setSuccess(null); setOtpSent(false); }} className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1">
+              Create a New Account <ArrowRight size={14} />
+            </button>
+          )}
+          {mode !== 'magic-link' && (
+            <button type="button" onClick={() => { setMode('magic-link'); setError(null); setSuccess(null); setOtpSent(false); }} className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1">
+              Sign In with Magic Link <ArrowRight size={14} />
+            </button>
+          )}
+          {mode !== 'sign-in-code' && (
+            <button type="button" onClick={() => { setMode('sign-in-code'); setError(null); setSuccess(null); setOtpSent(false); }} className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1">
+              Sign In with 6-Digit Code <ArrowRight size={14} />
+            </button>
           )}
         </div>
       </div>
