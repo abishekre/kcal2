@@ -4,6 +4,12 @@ import { useAppStore } from '../../store/useAppStore';
 import { triggerHaptic } from '../../utils/haptics';
 import { GOAL_CONFIGS, ACTIVITY_LEVELS, calculateGoalCalories } from '../../engine/projection';
 
+const GOAL_COLORS = {
+  rose: { container: 'border-rose-500 bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', dot: 'bg-rose-500' },
+  blue: { container: 'border-blue-500 bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500' },
+  emerald: { container: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' }
+};
+
 export default function SettingsSheet() {
   const profile = useAppStore(state => state.profile);
   const setProfile = useAppStore(state => state.setProfile);
@@ -82,16 +88,16 @@ export default function SettingsSheet() {
               <button 
                 key={key}
                 onClick={() => { triggerHaptic('light'); setGoal(key); }}
-                className={`w-full p-4 rounded-[20px] flex items-center justify-between transition-colors border-2 ${goal === key ? `border-${config.color}-500 bg-${config.color}-50 dark:bg-${config.color}-500/10` : 'border-transparent bg-gray-50 dark:bg-[#0A0A0C]'}`}
+                className={`w-full p-4 rounded-[20px] flex items-center justify-between transition-colors border-2 ${goal === key ? GOAL_COLORS[config.color].container : 'border-transparent bg-gray-50 dark:bg-[#0A0A0C]'}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{config.emoji}</span>
                   <div className="text-left">
-                    <div className={`font-bold ${goal === key ? `text-${config.color}-700 dark:text-${config.color}-400` : 'text-gray-900 dark:text-white'}`}>{config.label}</div>
+                    <div className={`font-bold ${goal === key ? GOAL_COLORS[config.color].text : 'text-gray-900 dark:text-white'}`}>{config.label}</div>
                     <div className="text-[10px] uppercase tracking-widest text-gray-500">{config.desc}</div>
                   </div>
                 </div>
-                {goal === key && <div className={`w-3 h-3 rounded-full bg-${config.color}-500`} />}
+                {goal === key && <div className={`w-3 h-3 rounded-full ${GOAL_COLORS[config.color].dot}`} />}
               </button>
             ))}
           </div>

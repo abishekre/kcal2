@@ -5,6 +5,12 @@ import { useFoodStore } from '../../store/useFoodStore';
 import { triggerHaptic } from '../../utils/haptics';
 import { FOOD_CATEGORIES } from '../../data/foods';
 
+const MACRO_COLORS = {
+  blue: 'bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-400 placeholder-blue-300 dark:placeholder-blue-500/50 focus:border-blue-200 dark:focus:border-blue-500/30',
+  emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-400 placeholder-emerald-300 dark:placeholder-emerald-500/50 focus:border-emerald-200 dark:focus:border-emerald-500/30',
+  amber: 'bg-amber-50 dark:bg-amber-500/10 text-amber-900 dark:text-amber-400 placeholder-amber-300 dark:placeholder-amber-500/50 focus:border-amber-200 dark:focus:border-amber-500/30'
+};
+
 export default function CustomFoodSheet({ onClose }) {
   const addCustomFood = useFoodStore(state => state.addCustomFood);
 
@@ -164,11 +170,11 @@ export default function CustomFoodSheet({ onClose }) {
                 <label className="block text-xs font-bold text-gray-500 mb-1">{m.label}</label>
                 <input 
                   type="number" 
-                inputMode="decimal"
+                  inputMode="decimal"
                   value={form[m.id]}
                   onChange={(e) => updateForm(m.id, e.target.value)}
                   placeholder="0"
-                  className={`w-full bg-${m.color}-50 dark:bg-${m.color}-500/10 text-${m.color}-900 dark:text-${m.color}-400 placeholder-${m.color}-300 dark:placeholder-${m.color}-500/50 px-3 py-3 rounded-[16px] font-bold text-lg outline-none border border-transparent focus:border-${m.color}-200 dark:focus:border-${m.color}-500/30 transition-colors text-center tabular-nums`}
+                  className={`w-full px-3 py-3 rounded-[16px] font-bold text-lg outline-none border border-transparent transition-colors text-center tabular-nums ${MACRO_COLORS[m.color]}`}
                 />
               </div>
             ))}

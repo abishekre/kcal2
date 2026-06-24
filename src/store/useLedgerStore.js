@@ -20,9 +20,10 @@ export const useLedgerStore = create((set, get) => ({
   templates: {},
   customMealConfigs: {},
 
-  hydrateLedger: async () => {
-    const { data: ledgerData } = await supabase.from('ledger').select('*');
-    const { data: mealConfigs } = await supabase.from('custom_meal_configs').select('*');
+  hydrateLedger: async (userId) => {
+    if (!userId) return;
+    const { data: ledgerData } = await supabase.from('ledger').select('*').eq('user_id', userId);
+    const { data: mealConfigs } = await supabase.from('custom_meal_configs').select('*').eq('user_id', userId);
     
     const ledger = {};
     if (ledgerData) {
@@ -75,12 +76,23 @@ export const useLedgerStore = create((set, get) => ({
     set((state) => {
       const template = state.templates[templateId];
       if (!template) return state;
+      
+      const currentRecord = state.ledger[dateKey] || getInitialDayRecord();
+      const mergedMeals = { ...currentRecord.meals };
+      for (const mKey of Object.keys(template.meals)) {
+        mergedMeals[mKey] = {
+          ...(mergedMeals[mKey] || {}),
+          ...template.meals[mKey]
+        };
+      }
+
       return {
         ledger: {
           ...state.ledger,
           [dateKey]: {
+            ...currentRecord,
             locked: false,
-            meals: JSON.parse(JSON.stringify(template.meals))
+            meals: mergedMeals
           }
         }
       };
@@ -145,7 +157,7 @@ export const useLedgerStore = create((set, get) => ({
 
     const userId = useAppStore.getState().userId;
     if (userId) {
-      supabase.from('custom_meal_configs').delete().match({ meal_key: mealKey })
+      supabase.from('custom_meal_configs').delete().match({ user_id: userId, meal_key: mealKey })
         .catch(err => console.error('Failed to remove custom meal', err));
     }
     get().syncLedgerDay(dateKey);
@@ -225,16 +237,24 @@ export const useLedgerStore = create((set, get) => ({
     get().syncLedgerDay(dateKey);
   },
 
-  dittoYesterday: (dateKey) => {
+  dittoYesterday: (dateKey, mealKey) => {
     set((state) => {
       const yesterdayRecord = state.ledger[getRelativeYesterdayKey(dateKey)];
       if (!yesterdayRecord) return state;
+      
+      const targetMeals = mealKey ? { [mealKey]: yesterdayRecord.meals[mealKey] || {} } : yesterdayRecord.meals;
+      const currentRecord = state.ledger[dateKey] || getInitialDayRecord();
+      
       return {
         ledger: {
           ...state.ledger,
           [dateKey]: {
+            ...currentRecord,
             locked: false,
-            meals: JSON.parse(JSON.stringify(yesterdayRecord.meals))
+            meals: {
+              ...currentRecord.meals,
+              ...JSON.parse(JSON.stringify(targetMeals))
+            }
           }
         }
       };

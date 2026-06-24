@@ -174,16 +174,12 @@ export default function Dashboard() {
                 isLocked={isLocked}
                 onUpdateQty={(fk, val) => updateQty(selectedDate, mealKey, fk, val)}
                 onRemoveFood={(fk) => {
-                  if (window.confirm("Remove this food?")) {
-                    removeFoodFromMeal(selectedDate, mealKey, fk);
-                  }
+                  removeFoodFromMeal(selectedDate, mealKey, fk);
                 }}
                 onDitto={() => dittoYesterday(selectedDate, mealKey)}
                 onAddTap={() => { triggerHaptic('light'); setActiveMealTarget(mealKey); setActiveSheet('search'); }}
                 onDeleteMeal={isCustom ? () => {
-                  if (window.confirm(`Delete ${title}?`)) {
-                    removeMealSlot(selectedDate, mealKey);
-                  }
+                  removeMealSlot(selectedDate, mealKey);
                 } : undefined}
               />
             );

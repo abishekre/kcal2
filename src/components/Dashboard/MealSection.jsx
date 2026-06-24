@@ -24,6 +24,7 @@ export default function MealSection({
   onDeleteMeal
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const foodEntries = Object.entries(foods || {}).filter(([, qty]) => qty > 0);
   const config = MEAL_CONFIG[mealKey] || MEAL_CONFIG.morning;
 
@@ -87,14 +88,29 @@ export default function MealSection({
                 <Plus size={18} />
               </motion.button>
               {onDeleteMeal && (
-                <motion.button
-                  whileTap={{ scale: 0.85 }}
-                  onClick={(e) => { e.stopPropagation(); triggerHaptic('medium'); onDeleteMeal(); }}
-                  className="w-[36px] h-[36px] flex items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10 text-red-500 hover:text-red-600 transition-colors ml-1"
-                  title="Delete Custom Meal"
-                >
-                  <Trash2 size={16} />
-                </motion.button>
+                confirmDelete ? (
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={(e) => { e.stopPropagation(); triggerHaptic('heavy'); setConfirmDelete(false); onDeleteMeal(); }}
+                    className="h-[36px] px-3 flex items-center justify-center rounded-full bg-red-500 text-white font-bold text-xs shadow-sm ml-1"
+                  >
+                    Confirm?
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      triggerHaptic('medium'); 
+                      setConfirmDelete(true); 
+                      setTimeout(() => setConfirmDelete(false), 3000); 
+                    }}
+                    className="w-[36px] h-[36px] flex items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10 text-red-500 hover:text-red-600 transition-colors ml-1"
+                    title="Delete Custom Meal"
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
+                )
               )}
             </div>
           )}

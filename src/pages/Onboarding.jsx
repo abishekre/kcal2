@@ -195,7 +195,23 @@ export default function Onboarding() {
                     <span className="font-bold text-gray-500 dark:text-gray-400">Height</span>
                     <div className="flex items-center gap-4">
                       <button aria-label="Decrease height" onClick={() => updateForm({ height: Math.max(100, formData.height - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
-                      <span className="text-[24px] font-black w-20 text-center tabular-nums dark:text-white">{formData.height}<span className="text-[14px] text-gray-400 ml-1">cm</span></span>
+                      <div className="flex items-baseline w-24 justify-center">
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value={formData.height}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) updateForm({ height: val });
+                            else if (e.target.value === '') updateForm({ height: '' });
+                          }}
+                          onBlur={() => {
+                            if (!formData.height || formData.height < 50) updateForm({ height: 175 });
+                          }}
+                          className="text-[24px] font-black w-14 text-right tabular-nums bg-transparent outline-none dark:text-white border-none"
+                        />
+                        <span className="text-[14px] text-gray-400 ml-1">cm</span>
+                      </div>
                       <button aria-label="Increase height" onClick={() => updateForm({ height: formData.height + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
                     </div>
                   </div>
@@ -205,7 +221,23 @@ export default function Onboarding() {
                     <span className="font-bold text-gray-500 dark:text-gray-400">Weight</span>
                     <div className="flex items-center gap-4">
                       <button aria-label="Decrease weight" onClick={() => updateForm({ weight: Math.max(30, formData.weight - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
-                      <span className="text-[24px] font-black w-20 text-center tabular-nums dark:text-white">{formData.weight}<span className="text-[14px] text-gray-400 ml-1">kg</span></span>
+                      <div className="flex items-baseline w-24 justify-center">
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value={formData.weight}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val)) updateForm({ weight: val });
+                            else if (e.target.value === '') updateForm({ weight: '' });
+                          }}
+                          onBlur={() => {
+                            if (!formData.weight || formData.weight < 20) updateForm({ weight: 75 });
+                          }}
+                          className="text-[24px] font-black w-14 text-right tabular-nums bg-transparent outline-none dark:text-white border-none"
+                        />
+                        <span className="text-[14px] text-gray-400 ml-1">kg</span>
+                      </div>
                       <button aria-label="Increase weight" onClick={() => updateForm({ weight: formData.weight + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
                     </div>
                   </div>
@@ -215,7 +247,23 @@ export default function Onboarding() {
                     <span className="font-bold text-gray-500 dark:text-gray-400">Age</span>
                     <div className="flex items-center gap-4">
                       <button aria-label="Decrease age" onClick={() => updateForm({ age: Math.max(12, formData.age - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
-                      <span className="text-[24px] font-black w-20 text-center tabular-nums dark:text-white">{formData.age}<span className="text-[14px] text-gray-400 ml-1">yo</span></span>
+                      <div className="flex items-baseline w-24 justify-center">
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value={formData.age}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) updateForm({ age: val });
+                            else if (e.target.value === '') updateForm({ age: '' });
+                          }}
+                          onBlur={() => {
+                            if (!formData.age || formData.age < 12) updateForm({ age: 25 });
+                          }}
+                          className="text-[24px] font-black w-14 text-right tabular-nums bg-transparent outline-none dark:text-white border-none"
+                        />
+                        <span className="text-[14px] text-gray-400 ml-1">yo</span>
+                      </div>
                       <button aria-label="Increase age" onClick={() => updateForm({ age: formData.age + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
                     </div>
                   </div>
@@ -288,7 +336,20 @@ export default function Onboarding() {
                     <div className="flex items-center gap-6">
                       <button aria-label="Decrease target weight" onClick={() => updateForm({ targetWeight: Math.max(30, formData.targetWeight - 1) })} className="w-14 h-14 rounded-full bg-gray-50 dark:bg-white/5 font-black text-xl">-</button>
                       <div className="text-center w-28">
-                        <span className="text-[48px] font-black tabular-nums leading-none dark:text-white">{formData.targetWeight}</span>
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value={formData.targetWeight}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val)) updateForm({ targetWeight: val });
+                            else if (e.target.value === '') updateForm({ targetWeight: '' });
+                          }}
+                          onBlur={() => {
+                            if (!formData.targetWeight || formData.targetWeight < 20) updateForm({ targetWeight: formData.weight });
+                          }}
+                          className="text-[48px] font-black tabular-nums leading-none text-center bg-transparent outline-none w-full dark:text-white border-none"
+                        />
                         <span className="block text-[14px] font-bold text-gray-400 mt-1">kg</span>
                       </div>
                       <button aria-label="Increase target weight" onClick={() => updateForm({ targetWeight: formData.targetWeight + 1 })} className="w-14 h-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-xl">+</button>
@@ -307,7 +368,20 @@ export default function Onboarding() {
                     <div className="flex items-center gap-6">
                       <button aria-label="Decrease duration" onClick={() => updateForm({ durationWeeks: Math.max(1, formData.durationWeeks - 1) })} className="w-14 h-14 rounded-full bg-gray-50 dark:bg-white/5 font-black text-xl">-</button>
                       <div className="text-center w-28">
-                        <span className="text-[48px] font-black tabular-nums leading-none dark:text-white">{formData.durationWeeks}</span>
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value={formData.durationWeeks}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) updateForm({ durationWeeks: val });
+                            else if (e.target.value === '') updateForm({ durationWeeks: '' });
+                          }}
+                          onBlur={() => {
+                            if (!formData.durationWeeks || formData.durationWeeks < 1) updateForm({ durationWeeks: 4 });
+                          }}
+                          className="text-[48px] font-black tabular-nums leading-none text-center bg-transparent outline-none w-full dark:text-white border-none"
+                        />
                         <span className="block text-[14px] font-bold text-gray-400 mt-1">Weeks</span>
                       </div>
                       <button aria-label="Increase duration" onClick={() => updateForm({ durationWeeks: formData.durationWeeks + 1 })} className="w-14 h-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-xl">+</button>

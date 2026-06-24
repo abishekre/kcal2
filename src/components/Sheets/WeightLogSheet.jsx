@@ -82,8 +82,21 @@ export default function WeightLogSheet({ onClose }) {
               <Minus size={24} />
             </button>
             
-            <div className="flex items-baseline w-32 justify-center">
-              <span className="text-6xl font-black tabular-nums tracking-tighter">{weight.toFixed(1)}</span>
+            <div className="flex items-baseline w-40 justify-center">
+              <input 
+                type="text"
+                inputMode="decimal"
+                value={weight}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) setWeight(val);
+                  else if (e.target.value === '') setWeight('');
+                }}
+                onBlur={() => {
+                  if (!weight || weight < 20) setWeight(profile.weight);
+                }}
+                className="text-6xl font-black tabular-nums tracking-tighter text-center bg-transparent outline-none w-full border-none"
+              />
               <span className="text-xl font-bold text-gray-400 ml-1">kg</span>
             </div>
             

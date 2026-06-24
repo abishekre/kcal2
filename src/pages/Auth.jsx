@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Loader2, Target, ArrowRight, KeyRound } from 'lucide-react';
+import { Mail, Lock, Loader2, Target, ArrowRight, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 // No social icons for now per user request
@@ -14,6 +14,7 @@ export default function Auth() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [mode, setMode] = useState('sign-in'); // 'sign-in', 'sign-up', 'magic-link'
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -92,9 +93,18 @@ export default function Auth() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={otpSent}
-              className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
+              className="w-full pl-12 pr-16 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
               required
             />
+            {otpSent && (
+              <button 
+                type="button"
+                onClick={() => setOtpSent(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                EDIT
+              </button>
+            )}
           </div>
           
           <AnimatePresence>
@@ -107,15 +117,22 @@ export default function Auth() {
               >
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={otpSent}
-                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
+                  className="w-full pl-12 pr-12 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
                   required={mode !== 'magic-link'}
                   minLength={6}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </motion.div>
             )}
 
@@ -129,6 +146,9 @@ export default function Auth() {
                 <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoFocus
                   placeholder="6-digit Code"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
@@ -165,21 +185,41 @@ export default function Auth() {
         </form>
 
         <div className="mt-8 flex flex-col items-center gap-3">
-          {mode !== 'magic-link' && (
-            <button 
-              onClick={() => { setMode('magic-link'); setError(null); setSuccess(null); setOtpSent(false); }}
-              className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1"
-            >
-              Sign in with Code instead <ArrowRight size={14} />
-            </button>
+          {mode === 'magic-link' ? (
+            <>
+              <button 
+                type="button"
+                onClick={() => { setMode('sign-in'); setError(null); setSuccess(null); setOtpSent(false); }}
+                className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1"
+              >
+                Use Password instead <ArrowRight size={14} />
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setMode('sign-up'); setError(null); setSuccess(null); setOtpSent(false); }}
+                className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm mt-4"
+              >
+                Don't have an account? Sign up
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                type="button"
+                onClick={() => { setMode('magic-link'); setError(null); setSuccess(null); setOtpSent(false); }}
+                className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1"
+              >
+                Sign in with Code instead <ArrowRight size={14} />
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setError(null); setSuccess(null); setOtpSent(false); }}
+                className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm mt-4"
+              >
+                {mode === 'sign-up' ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+              </button>
+            </>
           )}
-          
-          <button 
-            onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setError(null); setSuccess(null); setOtpSent(false); }}
-            className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm mt-4"
-          >
-            {mode === 'sign-up' ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-          </button>
         </div>
       </div>
     </div>

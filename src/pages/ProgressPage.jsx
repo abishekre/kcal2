@@ -27,6 +27,8 @@ export default function ProgressPage() {
     goalProgressPct = 100; // N/A
   } else if (totalChangeNeeded !== 0) {
     goalProgressPct = Math.max(0, Math.min(100, (currentChange / totalChangeNeeded) * 100));
+  } else {
+    goalProgressPct = 100; // start === target
   }
 
   // Weight Trend Data
@@ -93,7 +95,7 @@ export default function ProgressPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="pb-32 px-5 pt-8 min-h-screen bg-bg-app transition-colors duration-1000"
+      className="pb-48 px-5 pt-8 min-h-screen bg-bg-app transition-colors duration-1000"
     >
       <header className="mb-8">
         <h1 className="text-[28px] font-black tracking-tight text-gray-900 dark:text-white">Progress</h1>

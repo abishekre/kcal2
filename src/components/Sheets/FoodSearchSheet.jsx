@@ -206,16 +206,45 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
                         exit={{ opacity: 0, height: 0, marginTop: 0 }}
                         className="overflow-hidden border-t border-gray-200 dark:border-[#2c2c2e] pt-4 flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-4 bg-white dark:bg-[#0A0A0C] rounded-full p-1 border border-gray-200 dark:border-[#2c2c2e]">
+                        <div className="flex items-center gap-2 bg-white dark:bg-[#0A0A0C] rounded-full p-1 border border-gray-200 dark:border-[#2c2c2e]">
                           <button 
-                            onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); setActiveQty(Math.max(0.5, activeQty - 0.5)); }}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              triggerHaptic('light'); 
+                              const step = item.unit === 'g' ? 50 : 0.5;
+                              setActiveQty(Math.max(step, activeQty - step)); 
+                            }}
                             className="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1c1c1e] flex items-center justify-center active:scale-95 transition-transform"
                           >
                             <Minus size={16} />
                           </button>
-                          <span className="font-bold w-8 text-center tabular-nums">{activeQty}</span>
+                          
+                          <input 
+                            type="text"
+                            inputMode="numeric"
+                            value={activeQty}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') { setActiveQty(''); return; }
+                              const num = parseFloat(val);
+                              if (!isNaN(num)) setActiveQty(num);
+                            }}
+                            onBlur={() => {
+                              if (activeQty === '' || activeQty <= 0) {
+                                setActiveQty(item.unit === 'g' ? 100 : 1);
+                              }
+                            }}
+                            className="font-bold w-12 text-center bg-transparent border-none outline-none tabular-nums"
+                          />
+
                           <button 
-                            onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); setActiveQty(activeQty + 0.5); }}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              triggerHaptic('light'); 
+                              const step = item.unit === 'g' ? 50 : 0.5;
+                              setActiveQty(Number(activeQty) + step); 
+                            }}
                             className="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1c1c1e] flex items-center justify-center active:scale-95 transition-transform"
                           >
                             <Plus size={16} />
@@ -225,7 +254,7 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
                           onClick={(e) => { e.stopPropagation(); handleCommit(fk); }}
                           className="bg-emerald-500 text-white font-bold px-6 py-3 rounded-full flex items-center gap-2 active:scale-95 transition-transform shadow-lg shadow-emerald-500/20"
                         >
-                          Add <span className="opacity-75">{Math.round(item.cals * activeQty)} kcal</span>
+                          Add <span className="opacity-75">{Math.round(item.cals * (item.unit === 'g' ? activeQty / 100 : activeQty))} kcal</span>
                         </button>
                       </motion.div>
                     )}
@@ -249,7 +278,9 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
               unit: 'serving',
               category: 'fitness'
             });
-            handleCommit(tempKey);
+            triggerHaptic('success');
+            addFoodToMeal(selectedDate, mealKey, tempKey, 1);
+            onClose();
           }} 
         />
       )}

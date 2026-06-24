@@ -6,8 +6,9 @@ import { useAppStore } from './useAppStore.js';
 export const useWeightStore = create((set, get) => ({
   weightLog: {},
 
-  hydrateWeights: async () => {
-    const { data } = await supabase.from('weight_log').select('*');
+  hydrateWeights: async (userId) => {
+    if (!userId) return;
+    const { data } = await supabase.from('weight_log').select('*').eq('user_id', userId);
     if (data) {
       const weightLog = {};
       data.forEach(row => {
@@ -44,7 +45,7 @@ export const useWeightStore = create((set, get) => ({
     
     const userId = useAppStore.getState().userId;
     if (userId) {
-      await supabase.from('weight_log').delete().match({ date: dateKey })
+      await supabase.from('weight_log').delete().match({ user_id: userId, date: dateKey })
         .catch(err => console.error("Failed to delete weight", err));
     }
   },
