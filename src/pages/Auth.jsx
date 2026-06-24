@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Loader2, Target, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader2, Target, ArrowRight, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 // No social icons for now per user request
@@ -8,6 +8,8 @@ import { supabase } from '../lib/supabase';
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -22,11 +24,30 @@ export default function Auth() {
     let authError = null;
 
     if (mode === 'magic-link') {
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      authError = error;
-      if (!error) setSuccess('Check your email for the magic link!');
+      if (!otpSent) {
+        const { error } = await supabase.auth.signInWithOtp({ 
+          email,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        authError = error;
+        if (!error) {
+          setSuccess('Code sent! Check your email.');
+          setOtpSent(true);
+        }
+      } else {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'email'
+        });
+        authError = error;
+      }
     } else if (mode === 'sign-up') {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { emailRedirectTo: window.location.origin }
+      });
       authError = error;
       if (!error) setSuccess('Account created! Check your email to confirm.');
     } else {
@@ -37,7 +58,6 @@ export default function Auth() {
     if (authError) setError(authError.message);
     setLoading(false);
   };
-
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-center px-6 bg-bg-app">
@@ -53,7 +73,7 @@ export default function Auth() {
           <h1 className="text-3xl font-black tracking-tight mb-2 text-gray-900 dark:text-white">Kcal</h1>
           <p className="text-gray-500 dark:text-gray-400 font-medium text-center">
             {mode === 'sign-up' ? "Create an account to save your data." : 
-             mode === 'magic-link' ? "Sign in instantly with a magic link." : 
+             mode === 'magic-link' ? "Sign in instantly with a code." : 
              "Welcome back. Time to log."}
           </p>
         </motion.div>
@@ -66,7 +86,8 @@ export default function Auth() {
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+              disabled={otpSent}
+              className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
               required
             />
           </div>
@@ -91,6 +112,26 @@ export default function Auth() {
                 />
               </motion.div>
             )}
+
+            {mode === 'magic-link' && otpSent && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="relative overflow-hidden"
+              >
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="6-digit Code"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors tracking-widest"
+                  required
+                  maxLength={6}
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
 
           {error && (
@@ -112,7 +153,7 @@ export default function Auth() {
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : (
               mode === 'sign-up' ? "Create Account" : 
-              mode === 'magic-link' ? "Send Magic Link" : "Sign In"
+              mode === 'magic-link' ? (otpSent ? "Verify Code" : "Send Code") : "Sign In"
             )}
           </button>
         </form>
@@ -120,15 +161,15 @@ export default function Auth() {
         <div className="mt-8 flex flex-col items-center gap-3">
           {mode !== 'magic-link' && (
             <button 
-              onClick={() => { setMode('magic-link'); setError(null); setSuccess(null); }}
+              onClick={() => { setMode('magic-link'); setError(null); setSuccess(null); setOtpSent(false); }}
               className="text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold transition-colors text-sm flex items-center gap-1"
             >
-              Sign in with Magic Link instead <ArrowRight size={14} />
+              Sign in with Code instead <ArrowRight size={14} />
             </button>
           )}
           
           <button 
-            onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setError(null); setSuccess(null); }}
+            onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setError(null); setSuccess(null); setOtpSent(false); }}
             className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm mt-4"
           >
             {mode === 'sign-up' ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
