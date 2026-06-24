@@ -21,7 +21,7 @@ export default function ProgressPage() {
   const startWeight = profile.initialWeight || profile.weight;
   const totalChangeNeeded = targetWeight - startWeight;
   const currentChange = currentWeight - startWeight;
-  let goalProgressPct = 0;
+  let goalProgressPct;
   
   if (goal === 'maintain') {
     goalProgressPct = 100; // N/A

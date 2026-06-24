@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import { useAppStore } from './store/useAppStore';
 import { useGlobalStore } from './store/useGlobalStore';

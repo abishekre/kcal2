@@ -1,4 +1,4 @@
-import { format, parse, addDays, subDays, differenceInDays, isAfter, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parse, subDays, differenceInDays, isAfter, startOfWeek, endOfWeek } from 'date-fns';
 
 export const parseDateKey = (dateKey) => {
   return parse(dateKey, 'yyyy-MM-dd', new Date());
