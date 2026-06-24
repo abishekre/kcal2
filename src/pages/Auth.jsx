@@ -43,13 +43,25 @@ export default function Auth() {
         authError = error;
       }
     } else if (mode === 'sign-up') {
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: { emailRedirectTo: window.location.origin }
-      });
-      authError = error;
-      if (!error) setSuccess('Account created! Check your email to confirm.');
+      if (!otpSent) {
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        authError = error;
+        if (!error) {
+          setSuccess('Account created! Enter the 6-digit code sent to your email.');
+          setOtpSent(true);
+        }
+      } else {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'signup'
+        });
+        authError = error;
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       authError = error;
@@ -106,14 +118,15 @@ export default function Auth() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+                  disabled={otpSent}
+                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#141416] border border-gray-200 dark:border-[#1f1f23] rounded-[20px] font-medium text-black dark:text-white outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors disabled:opacity-50"
                   required={mode !== 'magic-link'}
                   minLength={6}
                 />
               </motion.div>
             )}
 
-            {mode === 'magic-link' && otpSent && (
+            {(mode === 'magic-link' || mode === 'sign-up') && otpSent && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -152,7 +165,7 @@ export default function Auth() {
             className="w-full py-4 bg-gray-900 dark:bg-emerald-500 text-white rounded-[20px] font-black tracking-wide flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : (
-              mode === 'sign-up' ? "Create Account" : 
+              mode === 'sign-up' ? (otpSent ? "Verify Code" : "Create Account") : 
               mode === 'magic-link' ? (otpSent ? "Verify Code" : "Send Code") : "Sign In"
             )}
           </button>
