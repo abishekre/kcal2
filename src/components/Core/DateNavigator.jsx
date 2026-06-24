@@ -19,13 +19,20 @@ function isFuture(dateKey) {
   return d > now;
 }
 
-function getWeekDays(centerDateKey) {
-  const center = new Date(centerDateKey + 'T00:00:00');
+function getWeekDays(selectedDateKey) {
+  const d = new Date(selectedDateKey + 'T00:00:00');
+  const dayOfWeek = d.getDay(); // 0 is Sunday, 1 is Monday ... 6 is Saturday
+  
+  // Make week start on Monday
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diff);
+
   const days = [];
-  for (let i = -3; i <= 3; i++) {
-    const d = new Date(center);
-    d.setDate(center.getDate() + i);
-    days.push(d.toLocaleDateString('en-CA'));
+  for (let i = 0; i < 7; i++) {
+    const temp = new Date(monday);
+    temp.setDate(monday.getDate() + i);
+    days.push(temp.toLocaleDateString('en-CA'));
   }
   return days;
 }
@@ -58,21 +65,23 @@ export default function DateNavigator({ selectedDate, onDateChange, ledger }) {
           <ChevronLeft size={20} />
         </motion.button>
 
-        <motion.div
-          key={selectedDate}
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          className="text-center flex-1 relative overflow-hidden"
-        >
-          <span className="text-[16px] font-bold tracking-tight text-gray-900 dark:text-white pointer-events-none">
-            {isTodaySelected ? 'Today' : formatDateLong(selectedDate)}
-          </span>
-          {isTodaySelected && (
-            <span className="block text-[13px] text-gray-400 font-medium mt-0.5 pointer-events-none">
-              {formatDateLong(selectedDate)}
+        <div className="text-center flex-1 relative overflow-hidden">
+          <motion.div
+            key={selectedDate}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center justify-center"
+          >
+            <span className="text-[16px] font-bold tracking-tight text-gray-900 dark:text-white pointer-events-none">
+              {isTodaySelected ? 'Today' : formatDateLong(selectedDate)}
             </span>
-          )}
+            {isTodaySelected && (
+              <span className="block text-[13px] text-gray-400 font-medium mt-0.5 pointer-events-none">
+                {formatDateLong(selectedDate)}
+              </span>
+            )}
+          </motion.div>
           <input 
             type="date"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -85,7 +94,7 @@ export default function DateNavigator({ selectedDate, onDateChange, ledger }) {
               }
             }}
           />
-        </motion.div>
+        </div>
 
         <motion.button
           whileTap={{ scale: 0.85 }}
@@ -114,6 +123,7 @@ export default function DateNavigator({ selectedDate, onDateChange, ledger }) {
 
           return (
             <motion.button
+              layout
               key={dayKey}
               whileTap={!isDisabled ? { scale: 0.9 } : {}}
               onClick={() => {

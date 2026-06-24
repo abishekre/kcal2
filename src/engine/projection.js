@@ -66,8 +66,11 @@ export function calculateGoalCalories(profile, goal, activityLevel) {
 
 export function calculateConsumption(meals, fullDB) {
   let cals = 0, p = 0, c = 0, f = 0;
+  const categories = {};
+  const mealCals = {};
   
-  Object.values(meals || {}).forEach(meal => {
+  Object.entries(meals || {}).forEach(([mealKey, meal]) => {
+    mealCals[mealKey] = 0;
     Object.entries(meal || {}).forEach(([foodId, qty]) => {
       const food = fullDB[foodId];
       if (!food || qty <= 0) return;
@@ -77,10 +80,16 @@ export function calculateConsumption(meals, fullDB) {
         multiplier = qty / 100;
       }
       
-      cals += (food.cals || 0) * multiplier;
+      const itemCals = (food.cals || 0) * multiplier;
+      cals += itemCals;
       p += (food.p || 0) * multiplier;
       c += (food.c || 0) * multiplier;
       f += (food.f || 0) * multiplier;
+      
+      mealCals[mealKey] += itemCals;
+      
+      const cat = food.category || 'other';
+      categories[cat] = (categories[cat] || 0) + itemCals;
     });
   });
   
@@ -90,7 +99,9 @@ export function calculateConsumption(meals, fullDB) {
       p: Math.round(p),
       c: Math.round(c),
       f: Math.round(f)
-    }
+    },
+    categories,
+    mealCals
   };
 }
 

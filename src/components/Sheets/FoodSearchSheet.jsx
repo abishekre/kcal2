@@ -6,11 +6,13 @@ import { useLedgerStore, INITIAL_DAY_RECORD } from '../../store/useLedgerStore';
 import { useAppStore } from '../../store/useAppStore';
 import { FOOD_CATEGORIES } from '../../data/foods';
 import { triggerHaptic } from '../../utils/haptics';
+import QuickCalsSheet from './QuickCalsSheet';
 
 export default function FoodSearchSheet({ mealKey, onClose }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [toastMsg, setToastMsg] = useState('');
+  const [showQuickCals, setShowQuickCals] = useState(false);
   
   const selectedDate = useAppStore(state => state.selectedDate);
   const setActiveSheet = useAppStore(state => state.setActiveSheet);
@@ -58,32 +60,18 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
       setActiveFoodKey(null);
     } else {
       setActiveFoodKey(fk);
-      setActiveQty(currentQty || 1);
+      setActiveQty(currentQty || (fullDB[fk]?.unit === 'g' ? 100 : 1));
     }
   };
 
   const handleCommit = (fk, itemName) => {
     triggerHaptic('success');
     addFoodToMeal(selectedDate, mealKey, fk, activeQty);
-    setToastMsg(`Added ${activeQty}x ${itemName}`);
-    setActiveFoodKey(null);
-    setTimeout(() => setToastMsg(''), 2000);
+    onClose(); // UX enhancement: Auto-close after adding to reduce friction
   };
 
   const handleQuickAddCals = () => {
-    const cals = window.prompt("Enter calories to quick add:");
-    if (cals && !isNaN(cals)) {
-      const numCals = parseInt(cals, 10);
-      const tempKey = `quick_${Date.now()}`;
-      useFoodStore.getState().addCustomFood(tempKey, {
-        name: 'Quick Calories',
-        cals: numCals,
-        p: 0, c: 0, f: 0,
-        unit: 'serving',
-        category: 'fitness'
-      });
-      handleCommit(tempKey, `${numCals} kcal`);
-    }
+    setShowQuickCals(true);
   };
 
   return (
@@ -240,19 +228,22 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
         )}
       </div>
 
-      {/* Multi-add Toast */}
-      <AnimatePresence>
-        {toastMsg && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full font-bold text-sm shadow-xl flex items-center gap-2 z-50 pointer-events-none"
-          >
-            <Check size={16} /> {toastMsg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showQuickCals && (
+        <QuickCalsSheet 
+          onClose={() => setShowQuickCals(false)} 
+          onAdd={(numCals) => {
+            const tempKey = `quick_${Date.now()}`;
+            useFoodStore.getState().addCustomFood(tempKey, {
+              name: 'Quick Calories',
+              cals: numCals,
+              p: 0, c: 0, f: 0,
+              unit: 'serving',
+              category: 'fitness'
+            });
+            handleCommit(tempKey, `${numCals} kcal`);
+          }} 
+        />
+      )}
     </motion.div>
   );
 }

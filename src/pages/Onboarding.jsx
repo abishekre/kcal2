@@ -77,9 +77,8 @@ export default function Onboarding() {
       setTargetDate(d.toLocaleDateString('en-CA'));
     } else {
       // Calculate from projection
-      const goalConfig = GOAL_CONFIGS[formData.goal];
-      const p = projectTimeline(formData.weight, formData.targetWeight, goalConfig.weeklyChangeKg);
-      setTargetDate(p.projectedDate);
+      const p = projectTimeline(formData.weight, formData.targetWeight, projection.weeklyChange);
+      setTargetDate(p.date ? p.date.toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA'));
     }
 
     setOnboardingComplete(true);
@@ -92,7 +91,7 @@ export default function Onboarding() {
     formData.activityLevel
   );
 
-  const timeline = projectTimeline(formData.weight, formData.targetWeight, GOAL_CONFIGS[formData.goal]?.weeklyChangeKg || 0);
+  const timeline = projectTimeline(formData.weight, formData.targetWeight, projection.weeklyChange);
 
   return (
     <div className="fixed inset-0 bg-[#FAFBFC] dark:bg-[#0A0A0C] flex flex-col z-50">
@@ -151,7 +150,7 @@ export default function Onboarding() {
                 </p>
                 <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20 p-4 rounded-[20px] text-left">
                   <p className="text-[13px] font-bold text-orange-800 dark:text-orange-300 leading-relaxed">
-                    Privacy Notice: Kcal runs entirely on your device. Your data is stored locally and never leaves your phone.
+                    Privacy Notice: Kcal securely syncs your data to the cloud so you never lose it and can access it anywhere.
                   </p>
                 </div>
               </div>
@@ -295,7 +294,7 @@ export default function Onboarding() {
                     <div className="mt-8 p-4 bg-gray-50 dark:bg-[#0A0A0C] rounded-[16px] w-full text-center border border-gray-100 dark:border-[#1f1f23]">
                       <p className="text-[13px] font-bold text-gray-500">Projected completion</p>
                       <p className="text-[16px] font-black text-gray-900 dark:text-white mt-1">
-                        {timeline.feasibility === 'mismatch' ? 'Invalid Target' : `${timeline.weeksNeeded} weeks`}
+                        {timeline.feasibility === 'mismatch' ? 'Invalid Target' : `${timeline.weeks} weeks`}
                       </p>
                     </div>
                   </div>

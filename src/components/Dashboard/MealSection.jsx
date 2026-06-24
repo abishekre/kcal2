@@ -41,24 +41,24 @@ export default function MealSection({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className={`rounded-[24px] overflow-hidden mb-4 border transition-colors ${
+      className={`rounded-[32px] overflow-hidden mb-6 transition-colors ${
         isLocked
-          ? 'bg-[#FAFBFC]/50 dark:bg-[#141416]/50 border-gray-100/50 dark:border-[#1f1f23]/50 opacity-80'
-          : 'bg-white dark:bg-[#141416] border-gray-100 dark:border-[#1f1f23] shadow-sm'
+          ? 'bg-[#FAFBFC]/50 dark:bg-[#141416]/50 opacity-80'
+          : 'bg-white dark:bg-[#141416]'
       }`}
     >
       {/* Header */}
       <div
         onClick={() => { setCollapsed(!collapsed); triggerHaptic('light'); }}
-        className={`w-full flex items-center justify-between px-5 py-4 min-h-[64px] transition-colors cursor-pointer ${!collapsed && foodEntries.length > 0 ? 'border-b border-gray-50 dark:border-white/5' : ''}`}
+        className="w-full flex items-center justify-between px-5 py-5 min-h-[64px] transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-3.5">
-          <div className={`w-[44px] h-[44px] rounded-[16px] flex items-center justify-center text-[22px] ${config.bg} border ${config.border}`}>
+          <div className={`w-[44px] h-[44px] rounded-[16px] flex items-center justify-center text-[22px] ${config.bg}`}>
             {config.emoji}
           </div>
           <div className="flex flex-col items-start">
             <h3 className={`text-[16px] font-black tracking-tight ${config.accent}`}>
-              {config.label}
+              {title}
             </h3>
             {mealTotal > 0 && (
               <span className="text-[13px] font-bold text-gray-400 tabular-nums">

@@ -32,7 +32,8 @@ export default function CustomFoodSheet({ onClose }) {
     }
 
     triggerHaptic('success');
-    addCustomFood({
+    const customId = `custom_${Date.now()}`;
+    addCustomFood(customId, {
       name: form.name.trim(),
       cals: Number(form.cals),
       p: Number(form.p || 0),
@@ -51,7 +52,7 @@ export default function CustomFoodSheet({ onClose }) {
         const p = Number(next.p || 0);
         const c = Number(next.c || 0);
         const f = Number(next.f || 0);
-        if (p > 0 || c > 0 || f > 0) {
+        if ((p > 0 || c > 0 || f > 0) && !prev.cals) {
           next.cals = String((p * 4) + (c * 4) + (f * 9));
         }
       }
@@ -113,7 +114,6 @@ export default function CustomFoodSheet({ onClose }) {
               <input 
                 type="number" 
                 inputMode="decimal"
-                pattern="[0-9]*"
                 value={form.cals}
                 onChange={(e) => updateForm('cals', e.target.value)}
                 placeholder="0"
@@ -122,18 +122,17 @@ export default function CustomFoodSheet({ onClose }) {
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Serving Unit</label>
-              <select 
-                value={form.unit}
-                onChange={(e) => updateForm('unit', e.target.value)}
-                className="w-full bg-gray-50 dark:bg-[#0A0A0C] px-4 py-4 rounded-[20px] font-bold text-base outline-none border border-transparent focus:border-gray-200 dark:focus:border-gray-800 transition-colors appearance-none"
-              >
-                <option value="serving">serving</option>
-                <option value="g">100g (grams)</option>
-                <option value="ml">100ml</option>
-                <option value="item">item/piece</option>
-                <option value="bowl">bowl</option>
-                <option value="cup">cup</option>
-              </select>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+                {['serving', '100g', 'ml', 'item'].map(u => (
+                  <button
+                    key={u}
+                    onClick={() => updateForm('unit', u)}
+                    className={`whitespace-nowrap px-4 py-3 rounded-[16px] font-bold text-sm transition-colors border ${form.unit === u ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-transparent' : 'bg-gray-50 dark:bg-[#0A0A0C] text-gray-500 border-transparent'}`}
+                  >
+                    {u === '100g' ? '100g (grams)' : u}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -166,7 +165,6 @@ export default function CustomFoodSheet({ onClose }) {
                 <input 
                   type="number" 
                 inputMode="decimal"
-                pattern="[0-9]*"
                   value={form[m.id]}
                   onChange={(e) => updateForm(m.id, e.target.value)}
                   placeholder="0"

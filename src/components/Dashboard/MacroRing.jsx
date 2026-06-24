@@ -42,10 +42,10 @@ export default function MacroRing({ consumption, target, goal }) {
   ];
 
   return (
-    <div className={`relative flex flex-col items-center p-8 rounded-[24px] overflow-hidden transition-all duration-500 border ${
+    <div className={`relative flex flex-col items-center p-8 rounded-[32px] overflow-hidden transition-all duration-500 ${
       isOver
-        ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-900/30'
-        : 'bg-white dark:bg-[#141416] border-gray-100 dark:border-[#1f1f23] shadow-sm'
+        ? 'bg-rose-50/50 dark:bg-rose-950/10'
+        : 'bg-white dark:bg-[#141416]'
     }`}>
 
       {/* Background glow effect */}
@@ -117,10 +117,10 @@ export default function MacroRing({ consumption, target, goal }) {
           <span className="text-[16px] text-gray-400 font-bold mt-1 tabular-nums tracking-wide">
             / {targetCals} kcal
           </span>
-          <div className={`mt-3 px-3 py-1.5 rounded-full text-[13px] font-black tabular-nums border ${
+          <div className={`mt-4 text-[13px] font-black tabular-nums tracking-widest uppercase ${
             isOver 
-              ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' 
-              : 'bg-gray-50 text-gray-500 border-gray-100 dark:bg-white/5 dark:text-gray-400 dark:border-white/10'
+              ? 'text-rose-500 dark:text-rose-400' 
+              : 'text-gray-400 dark:text-gray-500'
           }`}>
             {isOver ? `${cals - targetCals} OVER` : `${remaining} REMAINING`}
           </div>

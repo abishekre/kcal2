@@ -1,12 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Info } from 'lucide-react';
+import { supabase } from './lib/supabase';
 import { useAppStore } from './store/useAppStore';
+import { useGlobalStore } from './store/useGlobalStore';
 import Dashboard from './pages/Dashboard';
 import ProgressPage from './pages/ProgressPage';
 import SettingsSheet from './components/Sheets/SettingsSheet';
 import Onboarding from './pages/Onboarding';
 import BottomNav from './components/Core/BottomNav';
+import Auth from './pages/Auth';
 
 export default function App() {
   const theme = useAppStore(state => state.theme);
@@ -14,8 +16,30 @@ export default function App() {
   const onboardingComplete = useAppStore(state => state.onboardingComplete);
   const activePage = useAppStore(state => state.activePage);
   const setActivePage = useAppStore(state => state.setActivePage);
-  const localNoticeShown = useAppStore(state => state.localNoticeShown);
-  const setLocalNoticeShown = useAppStore(state => state.setLocalNoticeShown);
+  const initSession = useAppStore(state => state.initSession);
+  const fetchGlobals = useGlobalStore(state => state.fetchGlobals);
+
+  const [session, setSession] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    fetchGlobals();
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) initSession(session.user.id);
+      setAuthChecking(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) initSession(session.user.id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [initSession]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -57,6 +81,14 @@ export default function App() {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme, uiStatus]);
 
+  if (authChecking) {
+    return <div className="min-h-[100dvh] bg-bg-app" />;
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
   if (!onboardingComplete) {
     return <Onboarding />;
   }
@@ -68,33 +100,6 @@ export default function App() {
       {activePage === 'settings' && <SettingsSheet />}
 
       <BottomNav activePage={activePage} onNavigate={setActivePage} />
-
-      <AnimatePresence>
-        {!localNoticeShown && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-24 left-4 right-4 z-50 bg-white dark:bg-[#141416] p-4 rounded-[20px] shadow-lg border border-gray-100 dark:border-[#1f1f23] flex items-start gap-3"
-          >
-            <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-full shrink-0">
-              <Info size={20} className="text-blue-500" />
-            </div>
-            <div className="flex-1 pt-1">
-              <h4 className="font-bold text-sm mb-1">Local Storage Notice</h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                All your data is stored locally on your device. We do not use servers. If you clear your browser data, your Kcal history will be lost.
-              </p>
-            </div>
-            <button 
-              onClick={() => setLocalNoticeShown(true)}
-              className="p-2 -mr-2 -mt-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

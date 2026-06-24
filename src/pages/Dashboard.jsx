@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { motion, AnimatePresence, useScroll } from 'framer-motion';
-import { Target, ChevronRight, Lock, Unlock } from 'lucide-react';
+import { Target, ChevronRight, Lock, Unlock, Copy } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useLedgerStore, INITIAL_DAY_RECORD } from '../store/useLedgerStore';
 import { useFoodStore } from '../store/useFoodStore';
@@ -13,13 +13,14 @@ import CompactMacroBar from '../components/Dashboard/CompactMacroBar';
 import RobotBanner from '../components/Dashboard/RobotBanner';
 import StreakCounter from '../components/Dashboard/StreakCounter';
 import MealSection from '../components/Dashboard/MealSection';
-import DailyInsight from '../components/Dashboard/DailyInsight';
+
 import DateNavigator from '../components/Core/DateNavigator';
 
 import FoodSearchSheet from '../components/Sheets/FoodSearchSheet';
 import CustomFoodSheet from '../components/Sheets/CustomFoodSheet';
 import WeightLogSheet from '../components/Sheets/WeightLogSheet';
 import TemplateSheet from '../components/Sheets/TemplateSheet';
+import CustomMealSheet from '../components/Sheets/CustomMealSheet';
 
 export default function Dashboard() {
   const profile = useAppStore(state => state.profile);
@@ -141,6 +142,7 @@ export default function Dashboard() {
               streakCount={streakCount} 
               goal={goal}
               hour={hour}
+              consumption={consumption}
             />
           </div>
         )}
@@ -149,8 +151,13 @@ export default function Dashboard() {
           <MacroRing consumption={consumption} target={target} goal={goal} />
         </section>
 
-        <section className="mb-8">
-          <DailyInsight consumption={consumption} target={target} goal={goal} streak={streakCount} />
+        <section className="mb-6">
+          <button 
+            onClick={() => { triggerHaptic('light'); setActiveSheet('templates'); }}
+            className="flex items-center justify-center gap-2 w-full py-3 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-900 dark:text-white rounded-[16px] font-bold text-sm transition-colors active:scale-95"
+          >
+            <Copy size={16} className="text-gray-400 dark:text-gray-500" /> Load/Save Template
+          </button>
         </section>
 
         <div className="space-y-4">
@@ -183,8 +190,8 @@ export default function Dashboard() {
           {!isLocked && (
             <button 
               onClick={() => {
-                const name = window.prompt("Enter meal name (e.g. Pre-Workout):");
-                if (name) addMealSlot(selectedDate, name);
+                triggerHaptic('light');
+                setActiveSheet('customMeal');
               }}
               className="w-full py-4 rounded-[24px] border-2 border-dashed border-gray-200 dark:border-[#2c2c2e] text-gray-400 font-bold text-sm hover:border-gray-300 dark:hover:border-gray-600 active:scale-95 transition-all"
             >
@@ -226,6 +233,12 @@ export default function Dashboard() {
         {activeSheet === 'customFood' && <CustomFoodSheet onClose={() => setActiveSheet('search')} />}
         {activeSheet === 'weightLog' && <WeightLogSheet onClose={() => setActiveSheet(null)} />}
         {activeSheet === 'templates' && <TemplateSheet onClose={() => setActiveSheet(null)} />}
+        {activeSheet === 'customMeal' && (
+          <CustomMealSheet 
+            onClose={() => setActiveSheet(null)} 
+            onAdd={(name) => addMealSlot(selectedDate, name)} 
+          />
+        )}
       </AnimatePresence>
       
     </div>

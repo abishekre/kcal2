@@ -64,10 +64,10 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={`flex items-center justify-between p-4 min-h-[64px] rounded-[20px] mb-2 border transition-all ${
+      className={`flex items-center justify-between p-4 min-h-[64px] rounded-[24px] mb-1 transition-all ${
         isLocked
-          ? 'bg-[#FAFBFC]/50 dark:bg-[#141416]/50 border-gray-100/50 dark:border-[#1f1f23]/50 opacity-60'
-          : 'bg-white dark:bg-[#141416] border-gray-100 dark:border-[#1f1f23] shadow-sm hover:shadow-md'
+          ? 'opacity-60'
+          : 'hover:bg-gray-50 dark:hover:bg-white/5'
       }`}
     >
       <div className="flex flex-col min-w-0 flex-1 mr-3">
@@ -115,7 +115,7 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
         ) : (
           <span
             onClick={() => !isLocked && setIsEditing(true)}
-            className={`w-14 text-center font-black text-[16px] tabular-nums tracking-tight text-gray-900 dark:text-gray-100 ${!isLocked ? 'cursor-pointer' : ''}`}
+            className={`w-14 text-center font-black text-[16px] tabular-nums tracking-tight text-gray-900 dark:text-gray-100 ${!isLocked ? 'cursor-pointer border-b-2 border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 rounded-t py-1' : ''}`}
           >
             {value}{value > 0 && displayUnit ? <span className="text-[12px] text-gray-500 ml-0.5 font-bold">{displayUnit}</span> : ''}
           </span>
