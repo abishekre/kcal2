@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import { useAppStore } from './store/useAppStore';
 import { useGlobalStore } from './store/useGlobalStore';
 import Dashboard from './pages/Dashboard';
 import ProgressPage from './pages/ProgressPage';
 import SettingsSheet from './components/Sheets/SettingsSheet';
+import WeightLogSheet from './components/Sheets/WeightLogSheet';
+import ScienceSheet from './components/Sheets/ScienceSheet';
 import Onboarding from './pages/Onboarding';
 import BottomNav from './components/Core/BottomNav';
 import Auth from './pages/Auth';
@@ -16,6 +18,8 @@ export default function App() {
   const onboardingComplete = useAppStore(state => state.onboardingComplete);
   const activePage = useAppStore(state => state.activePage);
   const setActivePage = useAppStore(state => state.setActivePage);
+  const activeSheet = useAppStore(state => state.activeSheet);
+  const setActiveSheet = useAppStore(state => state.setActiveSheet);
   const initSession = useAppStore(state => state.initSession);
   const fetchGlobals = useGlobalStore(state => state.fetchGlobals);
 
@@ -39,7 +43,7 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [initSession]);
+  }, [initSession, fetchGlobals]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -82,7 +86,26 @@ export default function App() {
   }, [theme, uiStatus]);
 
   if (authChecking) {
-    return <div className="min-h-[100dvh] bg-bg-app" />;
+    return (
+      <div className="min-h-[100dvh] bg-bg-app flex flex-col items-center justify-center">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="flex flex-col items-center"
+        >
+          <div className="w-20 h-20 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-[24px] flex items-center justify-center mb-6 shadow-2xl rotate-3">
+            <span className="text-[32px]">🔥</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white mb-2">Kcal</h1>
+          <div className="flex gap-1 mt-4">
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }} className="w-2 h-2 rounded-full bg-emerald-500" />
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="w-2 h-2 rounded-full bg-emerald-500" />
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }} className="w-2 h-2 rounded-full bg-emerald-500" />
+          </div>
+        </motion.div>
+      </div>
+    );
   }
 
   if (!session) {
@@ -98,6 +121,10 @@ export default function App() {
       {activePage === 'dashboard' && <Dashboard />}
       {activePage === 'progress' && <ProgressPage />}
       {activePage === 'settings' && <SettingsSheet />}
+      <AnimatePresence>
+        {activeSheet === 'weightLog' && <WeightLogSheet onClose={() => setActiveSheet(null)} />}
+        {activeSheet === 'science' && <ScienceSheet onClose={() => setActiveSheet(null)} />}
+      </AnimatePresence>
 
       <BottomNav activePage={activePage} onNavigate={setActivePage} />
     </div>

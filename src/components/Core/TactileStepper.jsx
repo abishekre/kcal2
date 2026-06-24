@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { triggerHaptic } from '../../utils/haptics';
 import { Trash2 } from 'lucide-react';
@@ -9,8 +9,9 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
 
   const handleBlur = () => {
     setIsEditing(false);
-    const parsed = Number(tempVal);
+    let parsed = Number(tempVal);
     if (!isNaN(parsed) && parsed >= 0) {
+      if (parsed > 9999) parsed = 9999;
       if (parsed === 0 && onRemove) {
         onRemove();
       } else {
@@ -44,7 +45,7 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
   const handlePlus = () => {
     if (isLocked) return;
     triggerHaptic('light');
-    const newVal = value + increment;
+    const newVal = Math.min(9999, value + increment);
     onChange(newVal);
     setTempVal(newVal);
   };
@@ -92,6 +93,7 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
           <motion.button
             whileTap={{ scale: 0.8 }}
             onClick={handleMinus}
+            aria-label={`Decrease ${label}`}
             className={`w-[44px] h-[44px] flex items-center justify-center rounded-[16px] font-bold transition-colors ${
               value <= increment && onRemove
                 ? 'bg-rose-50 text-rose-500 dark:bg-rose-500/10'
@@ -107,7 +109,9 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
             autoFocus
             type="number"
             value={tempVal}
-            onChange={e => setTempVal(e.target.value)}
+            onChange={e => {
+              if (e.target.value.length <= 4) setTempVal(e.target.value);
+            }}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-14 text-center font-black text-[16px] bg-transparent outline-none border-b-2 border-emerald-500 tabular-nums text-gray-900 dark:text-gray-100"
@@ -125,6 +129,7 @@ export default function TactileStepper({ value, onChange, onRemove, label, unit,
           <motion.button
             whileTap={{ scale: 0.8 }}
             onClick={handlePlus}
+            aria-label={`Increase ${label}`}
             className="w-[44px] h-[44px] flex items-center justify-center bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-[16px] font-bold"
           >
             +

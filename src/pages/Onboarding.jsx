@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ArrowRight, Activity, Target, CheckCircle2, User, Ruler } from 'lucide-react';
+import { ChevronLeft, ArrowRight, Activity, CheckCircle2, User } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { ACTIVITY_LEVELS, GOAL_CONFIGS, calculateGoalCalories, projectTimeline } from '../engine/projection';
 import { triggerHaptic } from '../utils/haptics';
+import ScienceSheet from '../components/Sheets/ScienceSheet';
 
 const STEPS = [
   'welcome',
@@ -36,6 +37,7 @@ export default function Onboarding() {
     targetWeight: 75,
     durationWeeks: 4,
   });
+  const [showScience, setShowScience] = useState(false);
 
   const currentStep = STEPS[stepIndex];
 
@@ -64,7 +66,8 @@ export default function Onboarding() {
       gender: formData.gender,
       age: formData.age,
       height: formData.height,
-      weight: formData.weight
+      weight: formData.weight,
+      initialWeight: formData.weight
     });
     setActivityLevel(formData.activityLevel);
     setGoal(formData.goal);
@@ -191,9 +194,9 @@ export default function Onboarding() {
                   <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] flex items-center justify-between shadow-sm">
                     <span className="font-bold text-gray-500 dark:text-gray-400">Height</span>
                     <div className="flex items-center gap-4">
-                      <button onClick={() => updateForm({ height: formData.height - 1 })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
+                      <button aria-label="Decrease height" onClick={() => updateForm({ height: Math.max(100, formData.height - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
                       <span className="text-[24px] font-black w-20 text-center tabular-nums dark:text-white">{formData.height}<span className="text-[14px] text-gray-400 ml-1">cm</span></span>
-                      <button onClick={() => updateForm({ height: formData.height + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
+                      <button aria-label="Increase height" onClick={() => updateForm({ height: formData.height + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
                     </div>
                   </div>
 
@@ -201,9 +204,9 @@ export default function Onboarding() {
                   <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] flex items-center justify-between shadow-sm">
                     <span className="font-bold text-gray-500 dark:text-gray-400">Weight</span>
                     <div className="flex items-center gap-4">
-                      <button onClick={() => updateForm({ weight: formData.weight - 1 })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
+                      <button aria-label="Decrease weight" onClick={() => updateForm({ weight: Math.max(30, formData.weight - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
                       <span className="text-[24px] font-black w-20 text-center tabular-nums dark:text-white">{formData.weight}<span className="text-[14px] text-gray-400 ml-1">kg</span></span>
-                      <button onClick={() => updateForm({ weight: formData.weight + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
+                      <button aria-label="Increase weight" onClick={() => updateForm({ weight: formData.weight + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
                     </div>
                   </div>
 
@@ -211,9 +214,9 @@ export default function Onboarding() {
                   <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] flex items-center justify-between shadow-sm">
                     <span className="font-bold text-gray-500 dark:text-gray-400">Age</span>
                     <div className="flex items-center gap-4">
-                      <button onClick={() => updateForm({ age: formData.age - 1 })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
+                      <button aria-label="Decrease age" onClick={() => updateForm({ age: Math.max(12, formData.age - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
                       <span className="text-[24px] font-black w-20 text-center tabular-nums dark:text-white">{formData.age}<span className="text-[14px] text-gray-400 ml-1">yo</span></span>
-                      <button onClick={() => updateForm({ age: formData.age + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
+                      <button aria-label="Increase age" onClick={() => updateForm({ age: formData.age + 1 })} className="w-10 h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold">+</button>
                     </div>
                   </div>
                 </div>
@@ -283,18 +286,18 @@ export default function Onboarding() {
                   <div className="bg-white dark:bg-[#141416] p-8 rounded-[32px] flex flex-col items-center shadow-sm">
                     <span className="font-bold text-gray-400 mb-6 uppercase tracking-widest text-[12px]">Target Weight</span>
                     <div className="flex items-center gap-6">
-                      <button onClick={() => updateForm({ targetWeight: formData.targetWeight - 1 })} className="w-14 h-14 rounded-full bg-gray-50 dark:bg-white/5 font-black text-xl">-</button>
+                      <button aria-label="Decrease target weight" onClick={() => updateForm({ targetWeight: Math.max(30, formData.targetWeight - 1) })} className="w-14 h-14 rounded-full bg-gray-50 dark:bg-white/5 font-black text-xl">-</button>
                       <div className="text-center w-28">
                         <span className="text-[48px] font-black tabular-nums leading-none dark:text-white">{formData.targetWeight}</span>
                         <span className="block text-[14px] font-bold text-gray-400 mt-1">kg</span>
                       </div>
-                      <button onClick={() => updateForm({ targetWeight: formData.targetWeight + 1 })} className="w-14 h-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-xl">+</button>
+                      <button aria-label="Increase target weight" onClick={() => updateForm({ targetWeight: formData.targetWeight + 1 })} className="w-14 h-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-xl">+</button>
                     </div>
 
                     <div className="mt-8 p-4 bg-gray-50 dark:bg-[#0A0A0C] rounded-[16px] w-full text-center border border-gray-100 dark:border-[#1f1f23]">
                       <p className="text-[13px] font-bold text-gray-500">Projected completion</p>
                       <p className="text-[16px] font-black text-gray-900 dark:text-white mt-1">
-                        {timeline.feasibility === 'mismatch' ? 'Invalid Target' : `${timeline.weeks} weeks`}
+                        {timeline.feasibility === 'unrealistic' ? 'Invalid Target' : `${timeline.weeks} weeks`}
                       </p>
                     </div>
                   </div>
@@ -302,12 +305,12 @@ export default function Onboarding() {
                   <div className="bg-white dark:bg-[#141416] p-8 rounded-[32px] flex flex-col items-center shadow-sm">
                     <span className="font-bold text-gray-400 mb-6 uppercase tracking-widest text-[12px]">Duration</span>
                     <div className="flex items-center gap-6">
-                      <button onClick={() => updateForm({ durationWeeks: Math.max(1, formData.durationWeeks - 1) })} className="w-14 h-14 rounded-full bg-gray-50 dark:bg-white/5 font-black text-xl">-</button>
+                      <button aria-label="Decrease duration" onClick={() => updateForm({ durationWeeks: Math.max(1, formData.durationWeeks - 1) })} className="w-14 h-14 rounded-full bg-gray-50 dark:bg-white/5 font-black text-xl">-</button>
                       <div className="text-center w-28">
                         <span className="text-[48px] font-black tabular-nums leading-none dark:text-white">{formData.durationWeeks}</span>
                         <span className="block text-[14px] font-bold text-gray-400 mt-1">Weeks</span>
                       </div>
-                      <button onClick={() => updateForm({ durationWeeks: formData.durationWeeks + 1 })} className="w-14 h-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-xl">+</button>
+                      <button aria-label="Increase duration" onClick={() => updateForm({ durationWeeks: formData.durationWeeks + 1 })} className="w-14 h-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-xl">+</button>
                     </div>
                   </div>
                 )}
@@ -319,6 +322,12 @@ export default function Onboarding() {
               <div className="flex flex-col h-full mt-4">
                 <h2 className="text-[28px] font-black tracking-tight mb-6 dark:text-white">Your Plan is Ready</h2>
                 
+                <div className="flex justify-end mb-3">
+                  <button onClick={() => setShowScience(true)} className="text-emerald-500 font-bold text-[13px] flex items-center gap-1 hover:opacity-80 transition-opacity">
+                    ℹ️ How is this calculated?
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }}
@@ -389,6 +398,9 @@ export default function Onboarding() {
           )}
         </motion.button>
       </div>
+      <AnimatePresence>
+        {showScience && <ScienceSheet onClose={() => setShowScience(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

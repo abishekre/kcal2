@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Copy, Plus, Check } from 'lucide-react';
+import { X, Save, Copy, Check } from 'lucide-react';
 import { useLedgerStore } from '../../store/useLedgerStore';
 import { useAppStore } from '../../store/useAppStore';
 import { triggerHaptic } from '../../utils/haptics';

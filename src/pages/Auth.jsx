@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Loader2, Target, ArrowRight, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -21,14 +21,11 @@ export default function Auth() {
     setError(null);
     setSuccess(null);
 
-    let authError = null;
+    let authError;
 
     if (mode === 'magic-link') {
       if (!otpSent) {
-        const { error } = await supabase.auth.signInWithOtp({ 
-          email,
-          options: { emailRedirectTo: window.location.origin }
-        });
+        const { error } = await supabase.auth.signInWithOtp({ email });
         authError = error;
         if (!error) {
           setSuccess('Code sent! Check your email.');
@@ -44,11 +41,7 @@ export default function Auth() {
       }
     } else if (mode === 'sign-up') {
       if (!otpSent) {
-        const { error } = await supabase.auth.signUp({ 
-          email, 
-          password,
-          options: { emailRedirectTo: window.location.origin }
-        });
+        const { error } = await supabase.auth.signUp({ email, password });
         authError = error;
         if (!error) {
           setSuccess('Account created! Enter the 6-digit code sent to your email.');

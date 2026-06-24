@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot } from 'lucide-react';
 import { getRobotMessage, determineScenario } from '../../robot/messages';

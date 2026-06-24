@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion } from 'framer-motion';
 import { LayoutDashboard, TrendingUp, Settings } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';

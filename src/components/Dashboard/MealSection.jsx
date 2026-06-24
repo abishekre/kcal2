@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Copy, ChevronDown, Trash2 } from 'lucide-react';
 import TactileStepper from '../Core/TactileStepper';
@@ -24,7 +24,7 @@ export default function MealSection({
   onDeleteMeal
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const foodEntries = Object.entries(foods || {}).filter(([_, qty]) => qty > 0);
+  const foodEntries = Object.entries(foods || {}).filter(([, qty]) => qty > 0);
   const config = MEAL_CONFIG[mealKey] || MEAL_CONFIG.morning;
 
   // Calculate meal total

@@ -1,11 +1,11 @@
 // SUPABASE: Maps to table 'ledger'
 import { create } from 'zustand';
-import { calculateConsumption } from '../engine/projection';
-import { getTodayKey, getYesterdayKey } from '../utils/dates';
+import { getTodayKey, getRelativeYesterdayKey } from '../utils/dates';
 import { supabase } from '../lib/supabase.js';
 import { useAppStore } from './useAppStore.js';
+import debounce from 'lodash/debounce';
 
-export const INITIAL_DAY_RECORD = {
+export const getInitialDayRecord = () => ({
   locked: false,
   meals: {
     morning: {},
@@ -13,16 +13,16 @@ export const INITIAL_DAY_RECORD = {
     eve: {},
     dinner: {}
   }
-};
+});
 
 export const useLedgerStore = create((set, get) => ({
   ledger: {},
   templates: {},
   customMealConfigs: {},
 
-  hydrateLedger: async (userId) => {
-    const { data: ledgerData } = await supabase.from('ledger').select('*').eq('user_id', userId);
-    const { data: mealConfigs } = await supabase.from('custom_meal_configs').select('*').eq('user_id', userId);
+  hydrateLedger: async () => {
+    const { data: ledgerData } = await supabase.from('ledger').select('*');
+    const { data: mealConfigs } = await supabase.from('custom_meal_configs').select('*');
     
     const ledger = {};
     if (ledgerData) {
@@ -47,17 +47,17 @@ export const useLedgerStore = create((set, get) => ({
     set({ ledger, customMealConfigs });
   },
 
-  syncLedgerDay: (dateKey) => {
+  syncLedgerDay: debounce((dateKey) => {
     const userId = useAppStore.getState().userId;
     if (!userId) return;
-    const record = get().ledger[dateKey] || INITIAL_DAY_RECORD;
+    const record = useLedgerStore.getState().ledger[dateKey] || getInitialDayRecord();
     supabase.from('ledger').upsert({
       user_id: userId,
       date: dateKey,
       meals: record.meals,
       locked: record.locked
-    });
-  },
+    }).catch(err => console.error('Failed to sync ledger day', err));
+  }, 1000),
 
   saveTemplate: (name, dateKey) => set((state) => {
     const record = state.ledger[dateKey];
@@ -91,7 +91,7 @@ export const useLedgerStore = create((set, get) => ({
   addMealSlot: (dateKey, label, emoji = '🍽️') => {
     const mealKey = `custom_${Date.now()}`;
     set((state) => {
-      const record = state.ledger[dateKey] || JSON.parse(JSON.stringify(INITIAL_DAY_RECORD));
+      const record = state.ledger[dateKey] || getInitialDayRecord();
       return {
         customMealConfigs: {
           ...state.customMealConfigs,
@@ -116,7 +116,7 @@ export const useLedgerStore = create((set, get) => ({
         user_id: userId,
         meal_key: mealKey,
         label
-      });
+      }).catch(err => console.error('Failed to add custom meal', err));
     }
     get().syncLedgerDay(dateKey);
   },
@@ -145,13 +145,14 @@ export const useLedgerStore = create((set, get) => ({
 
     const userId = useAppStore.getState().userId;
     if (userId) {
-      supabase.from('custom_meal_configs').delete().match({ user_id: userId, meal_key: mealKey });
+      supabase.from('custom_meal_configs').delete().match({ meal_key: mealKey })
+        .catch(err => console.error('Failed to remove custom meal', err));
     }
     get().syncLedgerDay(dateKey);
   },
 
   getRecord: (dateKey) => {
-    return get().ledger[dateKey] || INITIAL_DAY_RECORD;
+    return get().ledger[dateKey] || getInitialDayRecord();
   },
 
   getTodayRecord: () => {
@@ -160,7 +161,7 @@ export const useLedgerStore = create((set, get) => ({
 
   addFoodToMeal: (dateKey, mealKey, foodId, qty = 1) => {
     set((state) => {
-      const record = state.ledger[dateKey] || INITIAL_DAY_RECORD;
+      const record = state.ledger[dateKey] || getInitialDayRecord();
       const meal = record.meals[mealKey] || {};
       return {
         ledger: {
@@ -180,7 +181,7 @@ export const useLedgerStore = create((set, get) => ({
 
   removeFoodFromMeal: (dateKey, mealKey, foodId) => {
     set((state) => {
-      const record = state.ledger[dateKey] || INITIAL_DAY_RECORD;
+      const record = state.ledger[dateKey] || getInitialDayRecord();
       const meal = { ...(record.meals[mealKey] || {}) };
       delete meal[foodId];
       return {
@@ -201,7 +202,7 @@ export const useLedgerStore = create((set, get) => ({
 
   updateQty: (dateKey, mealKey, foodId, newQty) => {
     set((state) => {
-      const record = state.ledger[dateKey] || INITIAL_DAY_RECORD;
+      const record = state.ledger[dateKey] || getInitialDayRecord();
       const meal = { ...(record.meals[mealKey] || {}) };
       if (newQty <= 0) {
         delete meal[foodId];
@@ -226,7 +227,7 @@ export const useLedgerStore = create((set, get) => ({
 
   dittoYesterday: (dateKey) => {
     set((state) => {
-      const yesterdayRecord = state.ledger[getYesterdayKey()];
+      const yesterdayRecord = state.ledger[getRelativeYesterdayKey(dateKey)];
       if (!yesterdayRecord) return state;
       return {
         ledger: {
@@ -243,7 +244,7 @@ export const useLedgerStore = create((set, get) => ({
 
   commitDay: (dateKey) => {
     set((state) => {
-      const record = state.ledger[dateKey] || INITIAL_DAY_RECORD;
+      const record = state.ledger[dateKey] || getInitialDayRecord();
       return {
         ledger: {
           ...state.ledger,
@@ -256,7 +257,7 @@ export const useLedgerStore = create((set, get) => ({
 
   unlockDay: (dateKey) => {
     set((state) => {
-      const record = state.ledger[dateKey] || INITIAL_DAY_RECORD;
+      const record = state.ledger[dateKey] || getInitialDayRecord();
       return {
         ledger: {
           ...state.ledger,
@@ -265,57 +266,5 @@ export const useLedgerStore = create((set, get) => ({
       };
     });
     get().syncLedgerDay(dateKey);
-  },
-
-  getStreak: (fullDB, targetCals) => {
-    const ledger = get().ledger;
-    const keys = Object.keys(ledger).sort((a, b) => new Date(b) - new Date(a));
-    
-    let streak = 0;
-    let todayProcessed = false;
-    const today = getTodayKey();
-    
-    for (const date of keys) {
-      const record = ledger[date];
-      if (!record) continue;
-      
-      if (date === today) {
-        todayProcessed = true;
-        if (record.locked) {
-          const consumed = calculateConsumption(record.meals, fullDB).cals;
-          if (consumed <= targetCals) streak++;
-        }
-        continue;
-      }
-      
-      if (record.locked) {
-        const consumed = calculateConsumption(record.meals, fullDB).cals;
-        if (consumed <= targetCals) {
-          streak++;
-        } else {
-          break;
-        }
-      } else {
-        break;
-      }
-    }
-    
-    return streak;
-  },
-
-  getAdherenceHistory: (days, fullDB, targetCals) => {
-    const ledger = get().ledger;
-    const dates = Object.keys(ledger).sort((a, b) => new Date(a) - new Date(b)).slice(-days);
-    
-    return dates.map(date => {
-      const record = ledger[date] || INITIAL_DAY_RECORD;
-      const cals = calculateConsumption(record.meals, fullDB).cals;
-      return {
-        date,
-        cals,
-        target: targetCals,
-        adherent: record.locked && cals <= targetCals
-      };
-    });
   }
 }));

@@ -13,6 +13,12 @@ export const GOAL_CONFIGS = {
   maintain: { label: 'Maintain', emoji: '⚖️', desc: 'Stay at current weight', color: 'emerald', calorieMultiplier: 1.0, proteinPerKg: 1.6 },
 };
 
+/**
+ * Calculates Basal Metabolic Rate (BMR) using the Mifflin-St Jeor equation.
+ * Recognized by the Academy of Nutrition and Dietetics as the most reliable predictive equation.
+ * Reference: Mifflin, M. D., et al. (1990). "A new predictive equation for resting energy expenditure in healthy individuals".
+ * The American Journal of Clinical Nutrition. DOI: 10.1093/ajcn/51.2.241
+ */
 export function calculateBMR(gender, weight, height, age) {
   if (gender === 'male') {
     return (10 * weight) + (6.25 * height) - (5 * age) + 5;
@@ -25,6 +31,13 @@ export function calculateTDEE(bmr, activityLevel) {
   return Math.round(bmr * multiplier);
 }
 
+/**
+ * Calculates Target Calories and Macronutrients based on user profile and goal.
+ * Protein multipliers range from 1.6g to 2.2g per kg of body weight based on current sports nutrition guidelines.
+ * References: 
+ * - Helms, E. R., et al. (2014). "Evidence-based recommendations for natural bodybuilding contest preparation". JISSN. DOI: 10.1186/1550-2783-11-20
+ * - Morton, R. W., et al. (2018). "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation...". BJSM. DOI: 10.1136/bjsports-2017-097608
+ */
 export function calculateGoalCalories(profile, goal, activityLevel) {
   const bmr = calculateBMR(profile.gender, profile.weight, profile.height, profile.age);
   const tdee = calculateTDEE(bmr, activityLevel);
@@ -35,18 +48,18 @@ export function calculateGoalCalories(profile, goal, activityLevel) {
   const proteinCals = protein * 4;
   const remainingCals = Math.max(0, targetCals - proteinCals);
   
-  let carbsCals = 0;
-  let fatCals = 0;
+  let carbsCals;
+  let fatCals;
   
   if (goal === 'cut') {
-    carbsCals = remainingCals * 0.35;
-    fatCals = remainingCals * 0.65;
+    carbsCals = remainingCals * 0.60;
+    fatCals = remainingCals * 0.40;
   } else if (goal === 'bulk') {
-    carbsCals = remainingCals * 0.45;
-    fatCals = remainingCals * 0.55;
+    carbsCals = remainingCals * 0.55;
+    fatCals = remainingCals * 0.45;
   } else {
-    carbsCals = remainingCals * 0.40;
-    fatCals = remainingCals * 0.60;
+    carbsCals = remainingCals * 0.55;
+    fatCals = remainingCals * 0.45;
   }
   
   const carbs = Math.max(0, Math.round(carbsCals / 4));

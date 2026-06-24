@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
-export const useGlobalStore = create((set, get) => ({
+export const useGlobalStore = create((set) => ({
   globalFoods: {},
   robotMessages: [],
   insightTexts: [],

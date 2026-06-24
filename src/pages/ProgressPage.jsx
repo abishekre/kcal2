@@ -1,17 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Flame, Target, Calendar, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { TrendingDown, TrendingUp, Plus, Flame, Target, Calendar } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useWeightStore } from '../store/useWeightStore';
 import { useLedgerStore } from '../store/useLedgerStore';
 import { useFoodStore } from '../store/useFoodStore';
 import { calculateGoalCalories, calculateConsumption, getStreak } from '../engine/projection';
 import { triggerHaptic } from '../utils/haptics';
-import { getPastDaysKeys } from '../utils/dates';
 
 export default function ProgressPage() {
   const { goal, targetWeight, profile, setActiveSheet } = useAppStore();
-  const { weightLog, logWeight, getWeightTrend, getLatestWeight } = useWeightStore();
+  const { getWeightTrend, getLatestWeight } = useWeightStore();
   const { ledger } = useLedgerStore();
   
   const [trendRange, setTrendRange] = useState(30);
@@ -19,7 +18,7 @@ export default function ProgressPage() {
   const currentWeight = getLatestWeight() || profile.weight;
   
   // Calculate Goal Progress
-  const startWeight = profile.weight; // simplification for progress bar
+  const startWeight = profile.initialWeight || profile.weight;
   const totalChangeNeeded = targetWeight - startWeight;
   const currentChange = currentWeight - startWeight;
   let goalProgressPct = 0;
@@ -66,6 +65,28 @@ export default function ProgressPage() {
 
   // Streak Stats
   const streakCount = useMemo(() => getStreak(ledger, fullDB, projection.targetCals), [ledger, fullDB, projection.targetCals]);
+
+  // Weekly Averages
+  const weeklyAverages = useMemo(() => {
+    let sumCals = 0;
+    let sumProtein = 0;
+    let daysWithData = 0;
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = d.toLocaleDateString('en-CA');
+      const dayData = ledger?.[key];
+      if (dayData && dayData.locked) {
+        const consumption = calculateConsumption(dayData.meals, fullDB);
+        sumCals += consumption.cals;
+        sumProtein += consumption.macros.p;
+        daysWithData++;
+      }
+    }
+    if (daysWithData === 0) return { cals: projection.targetCals, p: projection.macros.p, label: 'Targets' };
+    return { cals: Math.round(sumCals / daysWithData), p: Math.round(sumProtein / daysWithData), label: '7-Day Avg' };
+  }, [ledger, fullDB, projection]);
 
   return (
     <motion.div
@@ -209,19 +230,24 @@ export default function ProgressPage() {
 
       {/* Weekly Averages */}
       <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm mb-6">
-        <h3 className="text-[15px] font-bold text-gray-900 dark:text-white mb-4">Weekly Averages</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">{weeklyAverages.label}</h3>
+          <button onClick={() => { triggerHaptic('light'); setActiveSheet('science'); }} className="text-emerald-500 font-bold text-[12px] flex items-center gap-1 hover:opacity-80 transition-opacity">
+            ℹ️ How is this calculated?
+          </button>
+        </div>
         <div className="flex justify-between items-center bg-gray-50 dark:bg-[#0A0A0C] p-4 rounded-[16px] border border-gray-100 dark:border-[#1f1f23]">
           <div className="flex-1 text-center">
             <span className="block text-[12px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Calories</span>
             <span className="text-[20px] font-black text-gray-900 dark:text-white tabular-nums">
-              {Math.round(goal === 'cut' ? profile.weight * 22 : profile.weight * 30)}
+              {weeklyAverages.cals}
             </span>
           </div>
           <div className="w-[1px] h-10 bg-gray-200 dark:bg-white/10" />
           <div className="flex-1 text-center">
             <span className="block text-[12px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Protein</span>
             <span className="text-[20px] font-black text-emerald-500 tabular-nums">
-              {Math.round(profile.weight * 2.2)}g
+              {weeklyAverages.p}g
             </span>
           </div>
         </div>
@@ -231,6 +257,7 @@ export default function ProgressPage() {
       <motion.button
         whileTap={{ scale: 0.9 }}
         onClick={() => { triggerHaptic('light'); setActiveSheet('weightLog'); }}
+        aria-label="Log weight"
         className="fixed bottom-[100px] right-6 w-[56px] h-[56px] bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(255,255,255,0.15)] flex items-center justify-center z-40"
       >
         <Plus size={24} strokeWidth={2.5} />

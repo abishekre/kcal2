@@ -50,7 +50,7 @@ export function generateInsight(consumption, target, goal, streak, mode = 'good'
     );
   }
 
-  const fastFoodRatio = getCatRatio('fast_food');
+  const fastFoodRatio = getCatRatio('fastfood');
   if (fastFoodRatio > 0.4) {
     return getMsg(
       "Treated yourself to some takeout! Drink extra water today to balance the sodium.",
@@ -156,7 +156,7 @@ export function generateInsight(consumption, target, goal, streak, mode = 'good'
   }
 
   // 7. General positive reinforcement
-  const meatRatio = getCatRatio('meat') + getCatRatio('seafood') + getCatRatio('poultry');
+  const meatRatio = getCatRatio('protein');
   if (meatRatio > 0.4) {
     return getMsg(
       "Solid protein foundation today. Carnivore style!",

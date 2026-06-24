@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 import fs from 'fs';
-import path from 'url';
 
 // Quick hack to get env in node
 const envRaw = fs.readFileSync('.env.local', 'utf-8');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Minus, Plus, Scale, Save, CalendarDays } from 'lucide-react';
 import { useWeightStore } from '../../store/useWeightStore';
@@ -16,12 +16,13 @@ export default function WeightLogSheet({ onClose }) {
   const getWeightTrend = useWeightStore(state => state.getWeightTrend);
 
   const [weight, setWeight] = useState(profile.weight);
-
-  useEffect(() => {
+  const [prevSelectedDate, setPrevSelectedDate] = useState(selectedDate);
+  
+  if (selectedDate !== prevSelectedDate) {
+    setPrevSelectedDate(selectedDate);
     const existing = getWeightForDate(selectedDate);
-    if (existing) setWeight(existing);
-    else setWeight(profile.weight);
-  }, [selectedDate, profile.weight, getWeightForDate]);
+    setWeight(existing || profile.weight);
+  }
 
   const recentWeights = getWeightTrend(5).reverse();
 

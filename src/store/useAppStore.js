@@ -4,6 +4,7 @@ import { getTodayKey } from '../utils/dates';
 import { supabase } from '../lib/supabase.js';
 import { useFoodStore } from './useFoodStore.js';
 import { useLedgerStore } from './useLedgerStore.js';
+import { useWeightStore } from './useWeightStore.js';
 
 export const useAppStore = create((set, get) => ({
   session: null,
@@ -21,6 +22,7 @@ export const useAppStore = create((set, get) => ({
           height: settings.profile?.height || 175,
           weight: settings.profile?.weight || 80,
           age: settings.profile?.age || 25,
+          initialWeight: settings.profile?.initialWeight || settings.profile?.weight || 80,
         },
         targetWeight: settings.profile?.targetWeight || 70,
         targetDate: settings.profile?.targetDate || '2026-12-31',
@@ -34,8 +36,15 @@ export const useAppStore = create((set, get) => ({
       });
     }
 
-    await useFoodStore.getState().hydrateFoods(userId);
-    await useLedgerStore.getState().hydrateLedger(userId);
+    try {
+      await Promise.all([
+        useFoodStore.getState().hydrateFoods(userId),
+        useLedgerStore.getState().hydrateLedger(userId),
+        useWeightStore.getState().hydrateWeights(userId)
+      ]);
+    } catch (e) {
+      console.error("Hydration failed", e);
+    }
   },
 
   sync: () => {
@@ -48,6 +57,7 @@ export const useAppStore = create((set, get) => ({
         height: s.profile.height,
         weight: s.profile.weight,
         age: s.profile.age,
+        initialWeight: s.profile.initialWeight,
         targetWeight: s.targetWeight,
         targetDate: s.targetDate,
         theme: s.theme,
@@ -57,8 +67,7 @@ export const useAppStore = create((set, get) => ({
       goal: s.goal,
       activity_level: s.activityLevel,
       robot_mode: s.robotMode,
-      is_admin: s.isAdmin
-    });
+    }).catch(err => console.error("Sync failed", err));
   },
 
   // Profile
@@ -67,6 +76,7 @@ export const useAppStore = create((set, get) => ({
     height: 175,
     weight: 80,
     age: 25,
+    initialWeight: 80,
   },
   setProfile: (partial) => { set(s => ({ profile: { ...s.profile, ...partial } })); get().sync(); },
 
@@ -106,6 +116,10 @@ export const useAppStore = create((set, get) => ({
 
   // Reset / Logout
   resetAll: async () => {
+    useLedgerStore.setState({ ledger: {}, customMealConfigs: {} });
+    useWeightStore.setState({ weights: {} });
+    useFoodStore.setState({ customFoods: {} });
+    set({ session: null, userId: null, profile: {} });
     await supabase.auth.signOut();
     window.location.reload();
   }

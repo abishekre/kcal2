@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, Plus, Minus, Check, PlusCircle, Flame, Clock } from 'lucide-react';
+import { X, Search, Plus, Minus, PlusCircle, Flame } from 'lucide-react';
 import { useFoodStore } from '../../store/useFoodStore';
-import { useLedgerStore, INITIAL_DAY_RECORD } from '../../store/useLedgerStore';
+import { useLedgerStore, getInitialDayRecord } from '../../store/useLedgerStore';
 import { useAppStore } from '../../store/useAppStore';
 import { FOOD_CATEGORIES } from '../../data/foods';
 import { triggerHaptic } from '../../utils/haptics';
@@ -11,33 +11,30 @@ import QuickCalsSheet from './QuickCalsSheet';
 export default function FoodSearchSheet({ mealKey, onClose }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
-  const [toastMsg, setToastMsg] = useState('');
   const [showQuickCals, setShowQuickCals] = useState(false);
   
   const selectedDate = useAppStore(state => state.selectedDate);
   const setActiveSheet = useAppStore(state => state.setActiveSheet);
 
-  const customFoods = useFoodStore(state => state.customFoods);
   const getFullDB = useFoodStore(state => state.getFullDB);
   const getRecentFoods = useFoodStore(state => state.getRecentFoods);
-  const fullDB = useMemo(() => getFullDB(), [customFoods]);
+  const fullDB = useMemo(() => getFullDB(), [getFullDB]);
 
   const addFoodToMeal = useLedgerStore(state => state.addFoodToMeal);
-  const getRecord = useLedgerStore(state => state.getRecord);
   const ledger = useLedgerStore(state => state.ledger);
-  const record = getRecord(selectedDate) || INITIAL_DAY_RECORD;
-  const currentMealFoods = record.meals[mealKey] || {};
+  const currentRecord = ledger[selectedDate] || getInitialDayRecord();
+  const currentMealFoods = currentRecord.meals[mealKey] || {};
 
   const filteredFoods = useMemo(() => {
     let entries = Object.entries(fullDB);
     
     if (activeCategory !== 'all') {
-      entries = entries.filter(([_, item]) => item.category === activeCategory);
+      entries = entries.filter(([, item]) => item.category === activeCategory);
     }
     
     if (search.trim()) {
       const q = search.toLowerCase();
-      entries = entries.filter(([_, item]) => item.name.toLowerCase().includes(q));
+      entries = entries.filter(([, item]) => item.name.toLowerCase().includes(q));
     } else if (activeCategory === 'all') {
       const recentIds = getRecentFoods(ledger, 15);
       if (recentIds.length > 0) {
@@ -64,7 +61,7 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
     }
   };
 
-  const handleCommit = (fk, itemName) => {
+  const handleCommit = (fk) => {
     triggerHaptic('success');
     addFoodToMeal(selectedDate, mealKey, fk, activeQty);
     onClose(); // UX enhancement: Auto-close after adding to reduce friction
@@ -157,7 +154,19 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
         )}
 
         {filteredFoods.length === 0 ? (
-          <div className="text-center py-10 opacity-50 font-bold">No foods found.</div>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-[#1c1c1e] rounded-full flex items-center justify-center mb-4">
+              <Search className="text-gray-400" size={24} />
+            </div>
+            <p className="font-bold text-gray-900 dark:text-white text-[16px] mb-2">No foods found</p>
+            <p className="text-[14px] text-gray-500 mb-6 max-w-[200px]">We couldn't find anything matching your search.</p>
+            <button 
+              onClick={() => { triggerHaptic('light'); setActiveSheet('customFood'); }}
+              className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-[20px] font-bold text-sm shadow-sm active:scale-95 transition-transform"
+            >
+              + Create Custom Food
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
             {filteredFoods.map(([fk, item]) => {
@@ -213,7 +222,7 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
                           </button>
                         </div>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleCommit(fk, item.name); }}
+                          onClick={(e) => { e.stopPropagation(); handleCommit(fk); }}
                           className="bg-emerald-500 text-white font-bold px-6 py-3 rounded-full flex items-center gap-2 active:scale-95 transition-transform shadow-lg shadow-emerald-500/20"
                         >
                           Add <span className="opacity-75">{Math.round(item.cals * activeQty)} kcal</span>
@@ -240,7 +249,7 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
               unit: 'serving',
               category: 'fitness'
             });
-            handleCommit(tempKey, `${numCals} kcal`);
+            handleCommit(tempKey);
           }} 
         />
       )}

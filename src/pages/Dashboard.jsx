@@ -1,10 +1,10 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll } from 'framer-motion';
 import { Target, ChevronRight, Lock, Unlock, Copy } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { useLedgerStore, INITIAL_DAY_RECORD } from '../store/useLedgerStore';
+import { useLedgerStore, getInitialDayRecord } from '../store/useLedgerStore';
 import { useFoodStore } from '../store/useFoodStore';
-import { getTodayKey, getPastDaysKeys, formatDateShort, getTimeOfDay } from '../utils/dates';
+import { getTodayKey, getTimeOfDay } from '../utils/dates';
 import { calculateGoalCalories, calculateConsumption, getStreak } from '../engine/projection';
 import { triggerHaptic } from '../utils/haptics';
 
@@ -18,7 +18,6 @@ import DateNavigator from '../components/Core/DateNavigator';
 
 import FoodSearchSheet from '../components/Sheets/FoodSearchSheet';
 import CustomFoodSheet from '../components/Sheets/CustomFoodSheet';
-import WeightLogSheet from '../components/Sheets/WeightLogSheet';
 import TemplateSheet from '../components/Sheets/TemplateSheet';
 import CustomMealSheet from '../components/Sheets/CustomMealSheet';
 
@@ -35,21 +34,20 @@ export default function Dashboard() {
   const selectedDate = useAppStore(state => state.selectedDate);
   const setSelectedDate = useAppStore(state => state.setSelectedDate);
 
-  const customFoods = useFoodStore(state => state.customFoods);
   const getFullDB = useFoodStore(state => state.getFullDB);
-  const fullDB = useMemo(() => getFullDB(), [customFoods]);
+  const fullDB = useMemo(() => getFullDB(), [getFullDB]);
   
   const todayKey = getTodayKey();
   const isToday = selectedDate === todayKey;
 
   const ledger = useLedgerStore(state => state.ledger); 
-  const getRecord = useLedgerStore(state => state.getRecord);
-  const selectedRecord = getRecord(selectedDate) || INITIAL_DAY_RECORD;
+  const selectedRecord = ledger[selectedDate] || getInitialDayRecord();
 
   const customMealConfigs = useLedgerStore(state => state.customMealConfigs);
   const addMealSlot = useLedgerStore(state => state.addMealSlot);
   const { scrollY } = useScroll();
   const [showCompact, setShowCompact] = useState(false);
+  const sliderRef = useRef(null);
 
   useEffect(() => {
     return scrollY.on('change', (latest) => {
@@ -74,7 +72,6 @@ export default function Dashboard() {
     f: projection.macros.f
   };
 
-  const isOverload = consumption.cals > target.cals;
   const isLocked = selectedRecord.locked;
 
   const setUiStatus = useAppStore(state => state.setUiStatus);
@@ -93,7 +90,8 @@ export default function Dashboard() {
   const streakCount = useMemo(() => getStreak(ledger, fullDB, projection.targetCals), [ledger, fullDB, projection.targetCals]);
 
   const handleCommitDay = (info) => {
-    if (info.offset.x > window.innerWidth * 0.4) {
+    const threshold = sliderRef.current ? sliderRef.current.offsetWidth * 0.5 : 150;
+    if (info.offset.x > threshold) {
       triggerHaptic('heavy');
       commitDay(selectedDate);
     }
@@ -175,7 +173,11 @@ export default function Dashboard() {
                 fullDB={fullDB}
                 isLocked={isLocked}
                 onUpdateQty={(fk, val) => updateQty(selectedDate, mealKey, fk, val)}
-                onRemoveFood={(fk) => removeFoodFromMeal(selectedDate, mealKey, fk)}
+                onRemoveFood={(fk) => {
+                  if (window.confirm("Remove this food?")) {
+                    removeFoodFromMeal(selectedDate, mealKey, fk);
+                  }
+                }}
                 onDitto={() => dittoYesterday(selectedDate, mealKey)}
                 onAddTap={() => { triggerHaptic('light'); setActiveMealTarget(mealKey); setActiveSheet('search'); }}
                 onDeleteMeal={isCustom ? () => {
@@ -213,10 +215,10 @@ export default function Dashboard() {
                 </button>
               </div>
             ) : (
-              <div className="w-full bg-white dark:bg-[#141416] h-[72px] rounded-[36px] relative overflow-hidden flex items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-[#1f1f23]">
+              <div ref={sliderRef} className="w-full bg-white dark:bg-[#141416] h-[72px] rounded-[36px] relative overflow-hidden flex items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-[#1f1f23]">
                 <span className="absolute w-full text-center font-black text-gray-400 tracking-widest text-sm pointer-events-none uppercase">Slide to Commit Day</span>
                 <motion.div 
-                  drag="x" dragConstraints={{ left: 0, right: 300 }} dragSnapToOrigin onDragEnd={(e, i) => handleCommitDay(i)}
+                  drag="x" dragConstraints={sliderRef} dragSnapToOrigin onDragEnd={(e, i) => handleCommitDay(i)}
                   className="h-14 w-14 bg-gray-900 dark:bg-white rounded-full ml-2 flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing z-10"
                 >
                   <ChevronRight className="text-white dark:text-gray-900" />
@@ -231,7 +233,6 @@ export default function Dashboard() {
       <AnimatePresence>
         {activeSheet === 'search' && <FoodSearchSheet mealKey={activeMealTarget} onClose={() => setActiveSheet(null)} />}
         {activeSheet === 'customFood' && <CustomFoodSheet onClose={() => setActiveSheet('search')} />}
-        {activeSheet === 'weightLog' && <WeightLogSheet onClose={() => setActiveSheet(null)} />}
         {activeSheet === 'templates' && <TemplateSheet onClose={() => setActiveSheet(null)} />}
         {activeSheet === 'customMeal' && (
           <CustomMealSheet 

@@ -1,51 +1,31 @@
-export const getTodayKey = () => {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+import { format, parse, addDays, subDays, differenceInDays, isAfter, startOfWeek, endOfWeek } from 'date-fns';
+
+export const parseDateKey = (dateKey) => {
+  return parse(dateKey, 'yyyy-MM-dd', new Date());
 };
 
-export const getYesterdayKey = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+export const getTodayKey = () => format(new Date(), 'yyyy-MM-dd');
+
+export const getYesterdayKey = () => format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+export const getRelativeYesterdayKey = (dateKey) => format(subDays(parseDateKey(dateKey), 1), 'yyyy-MM-dd');
 
 export const getDaysRemaining = (targetDate) => {
-  const today = new Date(getTodayKey());
-  const target = new Date(targetDate);
-  const diffTime = target - today;
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return differenceInDays(parseDateKey(targetDate), parseDateKey(getTodayKey()));
 };
 
 export const getPastDaysKeys = (daysCount) => {
   const keys = [];
-  const d = new Date(getTodayKey());
+  const today = new Date();
   for (let i = 0; i < daysCount; i++) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    keys.push(`${year}-${month}-${day}`);
-    d.setDate(d.getDate() - 1);
+    keys.push(format(subDays(today, i), 'yyyy-MM-dd'));
   }
   return keys;
 };
 
-export const formatDateShort = (dateKey) => {
-  const d = new Date(dateKey);
-  const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-  return formatter.format(d);
-};
+export const formatDateShort = (dateKey) => format(parseDateKey(dateKey), 'MMM d');
 
-export const formatDateLong = (dateKey) => {
-  const d = new Date(dateKey);
-  const formatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-  return formatter.format(d);
-};
+export const formatDateLong = (dateKey) => format(parseDateKey(dateKey), 'EEEE, MMM d');
 
 export const getTimeOfDay = () => {
   const hour = new Date().getHours();
@@ -60,26 +40,12 @@ export const isToday = (dateKey) => {
 };
 
 export const isFuture = (dateKey) => {
-  return new Date(dateKey) > new Date(getTodayKey());
+  return isAfter(parseDateKey(dateKey), parseDateKey(getTodayKey()));
 };
 
 export const getWeekRange = (dateKey) => {
-  const d = new Date(dateKey);
-  const day = d.getDay(); // 0 is Sunday
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
-  const start = new Date(d.setDate(diff));
-  
-  const yearS = start.getFullYear();
-  const monthS = String(start.getMonth() + 1).padStart(2, '0');
-  const dayS = String(start.getDate()).padStart(2, '0');
-  const startKey = `${yearS}-${monthS}-${dayS}`;
-
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  const yearE = end.getFullYear();
-  const monthE = String(end.getMonth() + 1).padStart(2, '0');
-  const dayE = String(end.getDate()).padStart(2, '0');
-  const endKey = `${yearE}-${monthE}-${dayE}`;
-
-  return { start: startKey, end: endKey };
+  const d = parseDateKey(dateKey);
+  const start = startOfWeek(d, { weekStartsOn: 1 }); // Monday start
+  const end = endOfWeek(d, { weekStartsOn: 1 });
+  return { start: format(start, 'yyyy-MM-dd'), end: format(end, 'yyyy-MM-dd') };
 };

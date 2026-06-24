@@ -1,10 +1,8 @@
-import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useMemo } from 'react';
 import { Bot, User, Settings as SettingsIcon, Database, ExternalLink, Moon, Sun, Monitor, Info } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { triggerHaptic } from '../../utils/haptics';
 import { GOAL_CONFIGS, ACTIVITY_LEVELS, calculateGoalCalories } from '../../engine/projection';
-import DeveloperSheet from './DeveloperSheet';
 
 export default function SettingsSheet() {
   const profile = useAppStore(state => state.profile);
@@ -21,9 +19,7 @@ export default function SettingsSheet() {
   const robotMode = useAppStore(state => state.robotMode);
   const setRobotMode = useAppStore(state => state.setRobotMode);
   const resetAll = useAppStore(state => state.resetAll);
-  const activeSheet = useAppStore(state => state.activeSheet);
-  const setActiveSheet = useAppStore(state => state.setActiveSheet);
-
+    
   const projection = useMemo(() => calculateGoalCalories(profile, goal, activityLevel), [profile, goal, activityLevel]);
 
   const handleReset = () => {
@@ -207,16 +203,13 @@ export default function SettingsSheet() {
             <Database size={18} /> <h3 className="font-bold uppercase tracking-widest text-xs">Data & About</h3>
           </div>
           <div className="bg-white dark:bg-[#141416] rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm overflow-hidden flex flex-col">
-            <button 
-              onClick={() => { triggerHaptic(); setActiveSheet('developer'); }}
-              className="p-5 text-left font-bold text-sm flex justify-between items-center border-b border-gray-100 dark:border-[#1f1f23] hover:bg-gray-50 dark:hover:bg-[#1f1f23]/50 transition-colors"
-            >
+            <div className="p-5 text-left font-bold text-sm flex justify-between items-center border-b border-gray-100 dark:border-[#1f1f23]">
               <div className="flex items-center gap-3">
                 <ExternalLink size={16} className="text-gray-400" />
-                <span>About Kcal</span>
+                <span>Kcal App</span>
               </div>
               <span className="text-gray-400 uppercase tracking-widest text-[10px]">v6.0</span>
-            </button>
+            </div>
             <button 
               onClick={handleReset}
               className="p-5 text-left font-bold text-sm text-red-500 flex justify-between items-center hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -228,9 +221,6 @@ export default function SettingsSheet() {
 
       </div>
 
-      <AnimatePresence>
-        {activeSheet === 'developer' && <DeveloperSheet onClose={() => setActiveSheet(null)} />}
-      </AnimatePresence>
     </div>
   );
 }

@@ -5,7 +5,7 @@ function getSeededRandom(seedString) {
     h = Math.imul(31, h) + seedString.charCodeAt(i) | 0;
   }
   // Convert to 0-1 range
-  const t = h += 0x6D2B79F5;
+  const t = h + 0x6D2B79F5;
   let t2 = Math.imul(t ^ t >>> 15, t | 1);
   t2 ^= t2 + Math.imul(t2 ^ t2 >>> 7, t2 | 61);
   const result = ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
@@ -384,10 +384,10 @@ export function determineScenario(cals, targetCals, streakCount, hour, consumpti
 
   if (cals > 500) {
     if (getCatRatio('sweets') > 0.35) return 'high_sugar';
-    if (getCatRatio('fast_food') > 0.4) return 'high_fast_food';
+    if (getCatRatio('fastfood') > 0.4) return 'high_fast_food';
     if (getCatRatio('fitness') > 0.5) return 'liquid_diet';
     
-    const meatRatio = getCatRatio('meat') + getCatRatio('poultry') + getCatRatio('seafood');
+    const meatRatio = getCatRatio('protein');
     if (meatRatio > 0.5) return 'carnivore';
   }
   

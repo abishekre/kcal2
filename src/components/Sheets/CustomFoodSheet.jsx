@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { useFoodStore } from '../../store/useFoodStore';
