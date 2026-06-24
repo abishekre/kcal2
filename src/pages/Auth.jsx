@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Loader2, Target, ArrowRight, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Loader2, Target, ArrowRight, KeyRound, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { triggerHaptic } from '../utils/haptics';
 
 // No social icons for now per user request
 
@@ -15,6 +16,32 @@ export default function Auth() {
   const [success, setSuccess] = useState(null);
   const [mode, setMode] = useState('sign-in'); // 'sign-in', 'sign-up', 'magic-link'
   const [showPassword, setShowPassword] = useState(false);
+  const [shake, setShake] = useState(0);
+
+  const handleResend = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    let resendError;
+    if (mode === 'sign-up') {
+      const { error } = await supabase.auth.resend({ type: 'signup', email });
+      resendError = error;
+    } else {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      resendError = error;
+    }
+
+    if (resendError) {
+      setError(resendError.message);
+      setShake(s => s + 1);
+      triggerHaptic('error');
+    } else {
+      setSuccess('A new code has been sent to your email.');
+      triggerHaptic('success');
+    }
+    setLoading(false);
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -42,9 +69,14 @@ export default function Auth() {
       }
     } else if (mode === 'sign-up') {
       if (!otpSent) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         authError = error;
         if (!error) {
+          if (data?.session) {
+            // Email confirmation is disabled in Supabase; user is already logged in
+            setLoading(false);
+            return;
+          }
           setSuccess('Account created! Enter the 6-digit code sent to your email.');
           setOtpSent(true);
         }
@@ -61,7 +93,13 @@ export default function Auth() {
       authError = error;
     }
 
-    if (authError) setError(authError.message);
+    if (authError) {
+      setError(authError.message);
+      setShake(s => s + 1);
+      triggerHaptic('error');
+    } else if (otpSent) {
+      triggerHaptic('success');
+    }
     setLoading(false);
   };
 
@@ -84,7 +122,12 @@ export default function Auth() {
           </p>
         </motion.div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
+        <motion.form 
+          onSubmit={handleAuth} 
+          className="space-y-4"
+          animate={{ x: shake > 0 ? [-8, 8, -8, 8, 0] : 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -160,16 +203,32 @@ export default function Auth() {
             )}
           </AnimatePresence>
 
+          {(mode === 'magic-link' || mode === 'sign-up') && otpSent && (
+            <div className="flex justify-between items-center px-2 mt-2">
+              <span className="text-[12px] font-bold text-gray-400">Didn't receive a code?</span>
+              <button 
+                type="button" 
+                onClick={handleResend}
+                disabled={loading}
+                className="text-[12px] font-black text-gray-900 dark:text-white hover:opacity-70 transition-opacity"
+              >
+                Resend Code
+              </button>
+            </div>
+          )}
+
           {error && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-rose-500 text-sm font-bold text-center px-4">
-              {error}
-            </motion.p>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 p-3 rounded-[16px] text-sm font-bold flex items-start gap-2 shadow-sm">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+              <p className="leading-tight">{error}</p>
+            </motion.div>
           )}
 
           {success && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-sm font-bold text-center px-4">
-              {success}
-            </motion.p>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-3 rounded-[16px] text-sm font-bold flex items-start gap-2 shadow-sm">
+              <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">✓</div>
+              <p className="leading-tight">{success}</p>
+            </motion.div>
           )}
 
           <button
@@ -182,7 +241,7 @@ export default function Auth() {
               mode === 'magic-link' ? (otpSent ? "Verify Code" : "Send Code") : "Sign In"
             )}
           </button>
-        </form>
+        </motion.form>
 
         <div className="mt-8 flex flex-col items-center gap-3">
           {mode === 'magic-link' ? (
