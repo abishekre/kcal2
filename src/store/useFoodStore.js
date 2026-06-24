@@ -31,7 +31,7 @@ export const useFoodStore = create((set, get) => ({
         user_id: userId,
         food_key: id,
         data: foodData
-      }).catch(err => console.error('Failed to add custom food', err));
+      }).then(({error}) => { if (error) console.error('Failed to add custom food', error); });
     }
   },
 
@@ -44,7 +44,7 @@ export const useFoodStore = create((set, get) => ({
     const userId = useAppStore.getState().userId;
     if (userId) {
       supabase.from('custom_foods').delete().match({ user_id: userId, food_key: id })
-        .catch(err => console.error('Failed to remove custom food', err));
+        .then(({error}) => { if (error) console.error('Failed to remove custom food', error); });
     }
   },
 

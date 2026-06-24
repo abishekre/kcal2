@@ -14,7 +14,7 @@ export const useAppStore = create((set, get) => ({
   initSession: async (userId) => {
     set({ userId, session: true });
     
-    const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', userId).single();
+    const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', userId).maybeSingle();
     if (settings) {
       set({
         profile: {
@@ -67,7 +67,7 @@ export const useAppStore = create((set, get) => ({
       goal: s.goal,
       activity_level: s.activityLevel,
       robot_mode: s.robotMode,
-    }).catch(err => console.error("Sync failed", err));
+    }).then(({error}) => { if (error) console.error("Sync failed", error); });
   },
 
   // Profile

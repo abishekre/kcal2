@@ -32,7 +32,7 @@ export const useWeightStore = create((set, get) => ({
         user_id: userId,
         date: dateKey,
         weight: Number(weight)
-      }).catch(err => console.error("Failed to save weight", err));
+      }).then(({error}) => { if (error) console.error("Failed to save weight", error); });
     }
   },
 
@@ -46,7 +46,7 @@ export const useWeightStore = create((set, get) => ({
     const userId = useAppStore.getState().userId;
     if (userId) {
       await supabase.from('weight_log').delete().match({ user_id: userId, date: dateKey })
-        .catch(err => console.error("Failed to delete weight", err));
+        .then(({error}) => { if (error) console.error("Failed to delete weight", error); });
     }
   },
 

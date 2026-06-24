@@ -57,7 +57,7 @@ export const useLedgerStore = create((set, get) => ({
       date: dateKey,
       meals: record.meals,
       locked: record.locked
-    }).catch(err => console.error('Failed to sync ledger day', err));
+    }).then(({error}) => { if (error) console.error('Failed to sync ledger day', error); });
   }, 1000),
 
   saveTemplate: (name, dateKey) => set((state) => {
@@ -128,7 +128,7 @@ export const useLedgerStore = create((set, get) => ({
         user_id: userId,
         meal_key: mealKey,
         label
-      }).catch(err => console.error('Failed to add custom meal', err));
+      }).then(({error}) => { if (error) console.error('Failed to add custom meal', error); });
     }
     get().syncLedgerDay(dateKey);
   },
@@ -158,7 +158,7 @@ export const useLedgerStore = create((set, get) => ({
     const userId = useAppStore.getState().userId;
     if (userId) {
       supabase.from('custom_meal_configs').delete().match({ user_id: userId, meal_key: mealKey })
-        .catch(err => console.error('Failed to remove custom meal', err));
+        .then(({error}) => { if (error) console.error('Failed to remove custom meal', error); });
     }
     get().syncLedgerDay(dateKey);
   },
