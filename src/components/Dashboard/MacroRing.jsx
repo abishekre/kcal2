@@ -41,10 +41,16 @@ export default function MacroRing({ consumption, target, goal }) {
     { label: 'Fat', key: 'f', consumed: consumption?.macros?.f || 0, target: targetF, color: 'bg-indigo-500', track: 'bg-indigo-500/10' },
   ];
 
+  const ringSummary = isOver
+    ? `${cals} of ${targetCals} calories, ${cals - targetCals} over target`
+    : `${cals} of ${targetCals} calories, ${remaining} remaining`;
+
   return (
     <div className={`relative flex flex-col items-center p-8 rounded-[32px] overflow-hidden transition-all duration-500 ${
+      // A calmer amber instead of alarm-red for going over target — still
+      // clearly legible at a glance, without the punitive framing.
       isOver
-        ? 'bg-rose-50/50 dark:bg-rose-950/10'
+        ? 'bg-amber-50/50 dark:bg-amber-500/5'
         : 'bg-white dark:bg-[#141416]'
     }`}>
 
@@ -56,12 +62,12 @@ export default function MacroRing({ consumption, target, goal }) {
       )}
 
       {/* SVG Ring */}
-      <div className="relative flex items-center justify-center mb-6" style={{ width: size, height: size }}>
+      <div role="img" aria-label={ringSummary} className="relative flex items-center justify-center mb-6" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="absolute inset-0 -rotate-90">
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={isOver ? '#f43f5e' : accent.from} />
-              <stop offset="100%" stopColor={isOver ? '#ef4444' : accent.to} />
+              <stop offset="0%" stopColor={isOver ? '#f59e0b' : accent.from} />
+              <stop offset="100%" stopColor={isOver ? '#d97706' : accent.to} />
             </linearGradient>
             <filter id="glow">
               <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
@@ -87,7 +93,7 @@ export default function MacroRing({ consumption, target, goal }) {
           <motion.circle
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
             cx={center}
             cy={center}
             r={radius}
@@ -100,8 +106,10 @@ export default function MacroRing({ consumption, target, goal }) {
           />
         </svg>
 
-        {/* Center content */}
-        <div className="text-center z-10 flex flex-col items-center">
+        {/* Center content — aria-hidden since the wrapping ring div already
+            carries an equivalent aria-label; this avoids double-announcing
+            the same numbers to screen readers. */}
+        <div aria-hidden="true" className="text-center z-10 flex flex-col items-center">
           <motion.div
             key={cals}
             initial={{ scale: 0.95 }}
@@ -109,7 +117,7 @@ export default function MacroRing({ consumption, target, goal }) {
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           >
             <h2 className={`text-[64px] leading-[1] font-black tracking-tighter tabular-nums ${
-              isOver ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'
+              isOver ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'
             }`}>
               {cals}
             </h2>
@@ -118,8 +126,8 @@ export default function MacroRing({ consumption, target, goal }) {
             / {targetCals} kcal
           </span>
           <div className={`mt-4 text-[13px] font-black tabular-nums tracking-widest uppercase ${
-            isOver 
-              ? 'text-rose-500 dark:text-rose-400' 
+            isOver
+              ? 'text-amber-600 dark:text-amber-400'
               : 'text-gray-400 dark:text-gray-500'
           }`}>
             {isOver ? `${cals - targetCals} OVER` : `${remaining} REMAINING`}

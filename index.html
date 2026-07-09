@@ -2,22 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https://*;">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!--
+      script-src keeps 'unsafe-inline' because Vite's dev-time HMR runtime
+      relies on it; a nonce/hash-based policy is a larger follow-up, not a
+      drop-in change here. 'unsafe-eval' has been removed — nothing in this
+      app needs it. worker-src allows blob: because the PWA service worker
+      registration (vite-plugin-pwa/workbox) and Supabase's realtime client
+      both spin up workers from blob URLs — without an explicit worker-src,
+      browsers fall back to script-src, which doesn't include blob: and
+      silently blocks them. Note: frame-ancestors cannot be enforced via a
+      <meta> tag (browsers ignore it there); real clickjacking protection
+      needs an HTTP response header — added in vite.config.js for local
+      dev/preview, and must also be set at the hosting/CDN layer in
+      production.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; img-src 'self' data:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Kcal">
-    
-    <!-- Premium Fonts -->
+    <meta name="theme-color" content="#F0F1EE" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0A0A0C" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="Kcal — track calories, macros, water, weight, and fasting with a fast, science-backed daily log.">
+
+    <!-- Only Outfit is themed (see @theme --font-sans in index.css); Inter isn't loaded to avoid a wasted font request. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <title>Kcal</title>
   </head>
-  <body class="bg-[#FAFBFC] dark:bg-[#0A0A0C]">
+  <body class="bg-[#F0F1EE] dark:bg-[#0A0A0C]">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

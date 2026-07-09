@@ -175,7 +175,7 @@ export const BASE_FOOD_DB = {
   whole_milk: { name: 'Whole Milk', cals: 150, p: 8, c: 12, f: 8, unit: 'cup', category: 'beverages', emoji: '🥛' },
   skim_milk: { name: 'Skim Milk', cals: 80, p: 8, c: 12, f: 0, unit: 'cup', category: 'beverages', emoji: '🥛' },
   cola_soda: { name: 'Cola (Regular)', cals: 140, p: 0, c: 39, f: 0, unit: 'cup', category: 'beverages', emoji: '🥤' },
-  beer: { name: 'Beer (Pint)', cals: 150, p: 1, c: 13, f: 0, unit: 'cup', category: 'beverages', emoji: '🍺' },
+  beer: { name: 'Beer (Pint)', cals: 150, p: 1, c: 13, f: 0, a: 13, unit: 'cup', category: 'beverages', emoji: '🍺' },
   lime_soda: { name: 'Fresh Lime Soda (Sweet)', cals: 120, p: 0, c: 30, f: 0, unit: 'cup', category: 'beverages', emoji: '🥤' },
   smoothie_banana: { name: 'Banana Smoothie', cals: 250, p: 6, c: 45, f: 5, unit: 'cup', category: 'beverages', emoji: '🍌' },
 
@@ -247,7 +247,7 @@ export const BASE_FOOD_DB = {
   // Dairy
   whole_milk_dairy: { name: 'Whole Milk', cals: 61, p: 3, c: 4, f: 3, unit: 'ml', category: 'dairy', emoji: '🥛' },
   skim_milk_dairy: { name: 'Skim Milk', cals: 34, p: 3, c: 5, f: 0, unit: 'ml', category: 'dairy', emoji: '🥛' },
-  curd_dairy: { name: 'Curd/Yogurt', cals: 98, p: 3, c: 4, f: 4, unit: 'g', category: 'dairy', emoji: '🥣' },
+  curd_dairy: { name: 'Curd/Yogurt', cals: 64, p: 3, c: 4, f: 4, unit: 'g', category: 'dairy', emoji: '🥣' },
   paneer_raw: { name: 'Paneer', cals: 296, p: 14, c: 3, f: 25, unit: 'g', category: 'dairy', emoji: '🧀' },
   cheese_slice: { name: 'Cheese Slice', cals: 85, p: 5, c: 1, f: 7, unit: 'slice', category: 'dairy', emoji: '🧀' },
   butter_dairy: { name: 'Butter', cals: 102, p: 0, c: 0, f: 11, unit: 'tbsp', category: 'dairy', emoji: '🧈' },
@@ -273,3 +273,12 @@ export const BASE_FOOD_DB = {
   pad_thai: { name: 'Pad Thai', cals: 500, p: 18, c: 65, f: 18, unit: 'plate', category: 'international', emoji: '🍜' },
   ramen: { name: 'Tonkotsu Ramen', cals: 650, p: 25, c: 60, f: 30, unit: 'bowl', category: 'international', emoji: '🍜' },
 };
+
+// A sensible everyday shortlist shown to brand-new users who have no logging
+// history yet — so their first food search surfaces common staples instead of
+// niche items in DB-insertion order. Every key here must exist in BASE_FOOD_DB.
+export const POPULAR_FOOD_KEYS = [
+  'white_rice', 'chapati', 'dosa', 'idli', 'egg_omelette', 'whole_egg',
+  'chicken_breast', 'chicken_curry', 'dal_tadka', 'banana', 'apple',
+  'whole_milk', 'greek_yogurt', 'oats_porridge', 'chai_milk', 'whey_protein',
+];

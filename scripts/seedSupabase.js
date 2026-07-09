@@ -7,12 +7,20 @@ const envRaw = fs.readFileSync('.env.local', 'utf-8');
 const env = {};
 envRaw.split('\n').forEach(line => {
   if (line.includes('=')) {
-    const [k, v] = line.split('=');
-    env[k.trim()] = v.trim();
+    const [k, ...rest] = line.split('=');
+    env[k.trim()] = rest.join('=').trim();
   }
 });
 
-const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
+// After applying rls_hardening.sql, the anon key can no longer write to
+// global_foods/robot_messages/insight_texts — this script needs the
+// project's service_role key (Project Settings → API) instead. Add
+// SUPABASE_SERVICE_ROLE_KEY to .env.local; falls back to the anon key so
+// this still runs before that migration is applied.
+const supabase = createClient(
+  env.VITE_SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY
+);
 
 // Dummy seed data since we can't easily import ES modules containing JSX/React logic here without a transpiler
 const globalFoods = [

@@ -1,9 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useFoodStore } from '../store/useFoodStore';
+import { useAppStore } from '../store/useAppStore';
 
 describe('useFoodStore', () => {
   beforeEach(() => {
     useFoodStore.setState({ customFoods: {} });
+    // addCustomFood/removeCustomFood require a signed-in user — without
+    // this they bail out before touching state and these tests would
+    // pass trivially without exercising the code they claim to cover.
+    useAppStore.setState({ userId: 'test-user' });
   });
 
   it('adds a custom food successfully with an ID', () => {

@@ -17,7 +17,11 @@
 @layer base {
   :root {
     font-family: var(--font-sans);
-    --bg-app: #FAFBFC;
+    /* Flat card system: cards are plain white with no border/shadow, so the
+       page canvas needs real contrast against white to read as a distinct
+       surface on its own — #FAFBFC was only ~1% off white, invisible
+       without a border doing the work instead. */
+    --bg-app: #F0F1EE;
   }
   :root.dark {
     --bg-app: #0A0A0C;
@@ -30,16 +34,18 @@
     --bg-app: #051a0f;
   }
   
+  /* Calmer amber instead of alarm-red for going over target — still
+     legible at a glance, without punitive framing. */
   :root[data-status="over"] {
-    --bg-app: #fff1f2;
+    --bg-app: #fffbeb;
   }
   :root.dark[data-status="over"] {
-    --bg-app: #1a0505;
+    --bg-app: #1a1206;
   }
 
   html, body {
     background-color: var(--bg-app);
-    transition: background-color 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
     user-select: none;

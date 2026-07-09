@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Copy, ChevronDown, Trash2 } from 'lucide-react';
+import { Plus, Copy, ChevronDown, Trash2, RotateCcw } from 'lucide-react';
 import TactileStepper from '../Core/TactileStepper';
 import { triggerHaptic } from '../../utils/haptics';
 
@@ -21,7 +21,9 @@ export default function MealSection({
   onRemoveFood,
   onDitto,
   onAddTap,
-  onDeleteMeal
+  onDeleteMeal,
+  onRepeat,
+  canRepeat
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -44,14 +46,25 @@ export default function MealSection({
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       className={`rounded-[32px] overflow-hidden mb-6 transition-colors ${
         isLocked
-          ? 'bg-[#FAFBFC]/50 dark:bg-[#141416]/50 opacity-80'
+          ? 'bg-[#F0F1EE]/50 dark:bg-[#141416]/50 opacity-80'
           : 'bg-white dark:bg-[#141416]'
       }`}
     >
       {/* Header */}
       <div
         onClick={() => { setCollapsed(!collapsed); triggerHaptic('light'); }}
-        className="w-full flex items-center justify-between px-5 py-5 min-h-[64px] transition-colors cursor-pointer"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setCollapsed(!collapsed);
+            triggerHaptic('light');
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
+        aria-label={`${title}${mealTotal > 0 ? `, ${mealTotal} kcal` : ''}, ${collapsed ? 'collapsed' : 'expanded'}`}
+        className="w-full flex items-center justify-between px-5 py-5 min-h-[64px] transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset"
       >
         <div className="flex items-center gap-3.5">
           <div className={`w-[44px] h-[44px] rounded-[16px] flex items-center justify-center text-[22px] ${config.bg}`}>
@@ -155,13 +168,24 @@ export default function MealSection({
               </AnimatePresence>
 
               {foodEntries.length === 0 && !isLocked && (
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => { triggerHaptic('light'); onAddTap(); }}
-                  className={`w-full py-6 mt-1 border-[1.5px] border-dashed rounded-[20px] font-bold text-[14px] flex items-center justify-center gap-2.5 transition-colors ${config.border} ${config.accent} hover:bg-gray-50 dark:hover:bg-white/5 opacity-80 hover:opacity-100`}
-                >
-                  <Plus size={18} /> Add to {config.label}
-                </motion.button>
+                <div className="space-y-2">
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => { triggerHaptic('light'); onAddTap(); }}
+                    className={`w-full py-6 mt-1 border-[1.5px] border-dashed rounded-[20px] font-bold text-[14px] flex items-center justify-center gap-2.5 transition-colors ${config.border} ${config.accent} hover:bg-gray-50 dark:hover:bg-white/5 opacity-80 hover:opacity-100`}
+                  >
+                    <Plus size={18} /> Add to {config.label}
+                  </motion.button>
+                  {canRepeat && onRepeat && (
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => { triggerHaptic('light'); onRepeat(); }}
+                      className="w-full py-3 rounded-[16px] font-bold text-[13px] flex items-center justify-center gap-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <RotateCcw size={14} /> Repeat what you had last time
+                    </motion.button>
+                  )}
+                </div>
               )}
             </div>
           </motion.div>

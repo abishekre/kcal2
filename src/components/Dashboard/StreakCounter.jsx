@@ -1,6 +1,7 @@
 
 import { motion } from 'framer-motion';
 import { Flame, Zap, Star, Award, Medal, Trophy, Crown } from 'lucide-react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 const MILESTONES = [
   { days: 3, icon: Zap, label: 'Spark', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
@@ -20,6 +21,7 @@ function getCurrentMilestone(count) {
 }
 
 export default function StreakCounter({ streakCount }) {
+  const prefersReducedMotion = useReducedMotion();
   if (!streakCount || streakCount === 0) return null;
 
   const milestone = getCurrentMilestone(streakCount);
@@ -34,8 +36,8 @@ export default function StreakCounter({ streakCount }) {
     >
       <div className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 px-3.5 py-2 rounded-[14px] font-black text-[13px] tracking-tight border border-orange-200 dark:border-orange-500/20 shadow-sm">
         <motion.div
-          animate={streakCount > 2 ? { scale: [1, 1.2, 1] } : {}}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          animate={streakCount > 2 && !prefersReducedMotion ? { scale: [1, 1.2, 1] } : {}}
+          transition={{ duration: 1.5, repeat: prefersReducedMotion ? 0 : Infinity, ease: 'easeInOut' }}
         >
           <Flame size={16} />
         </motion.div>

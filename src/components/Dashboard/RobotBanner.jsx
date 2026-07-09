@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bot } from 'lucide-react';
 import { getRobotMessage, determineScenario } from '../../robot/messages';
 import { generateInsight } from '../../engine/insights';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 const MODE_STYLES = {
   good: {
@@ -12,7 +13,7 @@ const MODE_STYLES = {
     icon: 'text-emerald-500',
   },
   normal: {
-    bg: 'bg-[#FAFBFC] dark:bg-[#141416]',
+    bg: 'bg-[#F0F1EE] dark:bg-[#141416]',
     text: 'text-gray-800 dark:text-gray-200',
     border: 'border-gray-200 dark:border-[#1f1f23]',
     icon: 'text-gray-500 dark:text-gray-400',
@@ -28,11 +29,17 @@ const MODE_STYLES = {
 export default function RobotBanner({ mode, cals, targetCals, streakCount, goal, hour, consumption, target }) {
   const scenario = determineScenario(cals, targetCals, streakCount, hour, consumption);
   const robotMessage = getRobotMessage(scenario, mode, `${cals}-${hour}`);
-  const insight = generateInsight(consumption, target, goal, streakCount, mode);
+  // Fall back to a target built from targetCals if the full target object
+  // isn't supplied — without this, generateInsight sees no target and always
+  // returns the generic "set up your profile" copy instead of a real insight.
+  const effectiveTarget = target ?? (targetCals ? { cals: targetCals } : undefined);
+  const insight = generateInsight(consumption, effectiveTarget, goal, streakCount, mode);
+  const prefersReducedMotion = useReducedMotion();
 
   if (!robotMessage) return null;
 
   const style = MODE_STYLES[mode] || MODE_STYLES.normal;
+  const message = insight?.text ? `${robotMessage} ${insight.text}` : robotMessage;
 
   return (
     <AnimatePresence mode="wait">
@@ -47,14 +54,14 @@ export default function RobotBanner({ mode, cals, targetCals, streakCount, goal,
         <div className="flex items-start gap-3">
           <motion.div
             className="mt-0.5 shrink-0"
-            animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 5 }}
+            animate={prefersReducedMotion ? {} : { rotate: [0, -10, 10, -5, 5, 0] }}
+            transition={{ duration: 2.5, repeat: prefersReducedMotion ? 0 : Infinity, repeatDelay: 5 }}
           >
             <Bot size={24} className={style.icon} />
           </motion.div>
           <div className="flex flex-col min-w-0 gap-1.5 pt-0.5">
             <span className="font-bold text-[15px] tracking-tight leading-relaxed">
-              {robotMessage} {insight.text}
+              {message}
             </span>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useWeightStore } from '../store/useWeightStore';
 import { useLedgerStore } from '../store/useLedgerStore';
 import { useFoodStore } from '../store/useFoodStore';
-import { calculateGoalCalories, calculateConsumption, getStreak } from '../engine/projection';
+import { calculateGoalCalories, calculateConsumption, getStreak, hasLoggedFood } from '../engine/projection';
 import { triggerHaptic } from '../utils/haptics';
 
 export default function ProgressPage() {
@@ -37,7 +37,12 @@ export default function ProgressPage() {
   const maxWeight = Math.max(...trendData.map(d => d.weight), currentWeight) + 1;
 
   const getFullDB = useFoodStore(state => state.getFullDB);
-  const fullDB = useMemo(() => getFullDB(), [getFullDB]);
+  const customFoods = useFoodStore(state => state.customFoods);
+  // customFoods is read inside getFullDB() via the store's get(), not as a
+  // literal argument — without it in the deps this would never recompute
+  // when a custom food is added or edited. Real dependency, not a stale one.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fullDB = useMemo(() => getFullDB(), [customFoods, getFullDB]);
   const activityLevel = useAppStore(state => state.activityLevel);
 
   const projection = useMemo(() => calculateGoalCalories(profile, goal, activityLevel), [profile, goal, activityLevel]);
@@ -53,7 +58,8 @@ export default function ProgressPage() {
       
       const dayData = ledger?.[key];
       let status = 'gray'; // no data
-      if (dayData && dayData.locked) {
+      // Any day with food logged counts — no manual commit required.
+      if (hasLoggedFood(dayData)) {
         const consumption = calculateConsumption(dayData.meals, fullDB);
         const pct = (consumption.cals / projection.targetCals) * 100;
         if (pct > 105) status = 'red';
@@ -79,7 +85,7 @@ export default function ProgressPage() {
       d.setDate(today.getDate() - i);
       const key = d.toLocaleDateString('en-CA');
       const dayData = ledger?.[key];
-      if (dayData && dayData.locked) {
+      if (hasLoggedFood(dayData)) {
         const consumption = calculateConsumption(dayData.meals, fullDB);
         sumCals += consumption.cals;
         sumProtein += consumption.macros.p;
@@ -95,15 +101,15 @@ export default function ProgressPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="pb-48 px-5 pt-8 min-h-screen bg-bg-app transition-colors duration-1000"
+      className="pb-48 px-5 pt-8 min-h-screen bg-bg-app transition-colors duration-500"
     >
-      <header className="mb-8">
+      <header className="mb-6">
         <h1 className="text-[28px] font-black tracking-tight text-gray-900 dark:text-white">Progress</h1>
       </header>
 
       {/* Top Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm">
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px]">
           <div className="flex items-center gap-2 mb-2">
             <Flame size={16} className="text-orange-500" />
             <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Streak</span>
@@ -114,7 +120,7 @@ export default function ProgressPage() {
           <div className="text-[12px] font-semibold text-gray-400 mt-1">Days in a row</div>
         </div>
 
-        <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm">
+        <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px]">
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-blue-500" />
             <span className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Weight</span>
@@ -136,7 +142,7 @@ export default function ProgressPage() {
 
       {/* Goal Progress Bar */}
       {goal !== 'maintain' && (
-        <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm mb-6">
+        <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] mb-5">
           <div className="flex justify-between items-end mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Goal Progress</h3>
@@ -162,7 +168,7 @@ export default function ProgressPage() {
       )}
 
       {/* Weight Trend Chart */}
-      <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm mb-6">
+      <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] mb-5">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Weight Trend</h3>
           <div className="flex bg-gray-50 dark:bg-white/5 p-1 rounded-full border border-gray-100 dark:border-white/5">
@@ -203,13 +209,14 @@ export default function ProgressPage() {
         </div>
       </div>
 
-      {/* Heatmap */}
-      <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm mb-6">
+      {/* Adherence + Weekly Averages — combined, since both are "how am I
+          trending" at a glance rather than two separate concerns. */}
+      <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] mb-5">
         <div className="flex items-center gap-2 mb-4">
           <Calendar size={16} className="text-gray-400" />
           <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">30-Day Adherence</h3>
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-2 mb-5">
           {heatmapDays.map((d, i) => {
             let bg = 'bg-gray-100 dark:bg-white/5';
             if (d.status === 'green') bg = 'bg-emerald-500/80';
@@ -228,17 +235,14 @@ export default function ProgressPage() {
             );
           })}
         </div>
-      </div>
 
-      {/* Weekly Averages */}
-      <div className="bg-white dark:bg-[#141416] p-6 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">{weeklyAverages.label}</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="text-[13px] font-bold text-gray-500 dark:text-gray-400">{weeklyAverages.label}</h4>
           <button onClick={() => { triggerHaptic('light'); setActiveSheet('science'); }} className="text-emerald-500 font-bold text-[12px] flex items-center gap-1 hover:opacity-80 transition-opacity">
             ℹ️ How is this calculated?
           </button>
         </div>
-        <div className="flex justify-between items-center bg-gray-50 dark:bg-[#0A0A0C] p-4 rounded-[16px] border border-gray-100 dark:border-[#1f1f23]">
+        <div className="flex justify-between items-center bg-gray-50 dark:bg-[#0A0A0C] p-4 rounded-[16px]">
           <div className="flex-1 text-center">
             <span className="block text-[12px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Calories</span>
             <span className="text-[20px] font-black text-gray-900 dark:text-white tabular-nums">

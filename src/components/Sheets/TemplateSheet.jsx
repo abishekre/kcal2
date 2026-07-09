@@ -4,8 +4,10 @@ import { X, Save, Copy, Check } from 'lucide-react';
 import { useLedgerStore } from '../../store/useLedgerStore';
 import { useAppStore } from '../../store/useAppStore';
 import { triggerHaptic } from '../../utils/haptics';
+import { useSheetA11y } from '../../hooks/useSheetA11y';
 
 export default function TemplateSheet({ onClose }) {
+  const sheetRef = useSheetA11y(onClose);
   const selectedDate = useAppStore(state => state.selectedDate);
   const ledger = useLedgerStore(state => state.ledger);
   const templates = useLedgerStore(state => state.templates);
@@ -35,11 +37,15 @@ export default function TemplateSheet({ onClose }) {
   };
 
   return (
-    <motion.div 
-      initial={{ y: '100%' }} 
-      animate={{ y: 0 }} 
-      exit={{ y: '100%' }} 
-      transition={{ type: 'spring', damping: 28, stiffness: 350 }} 
+    <motion.div
+      ref={sheetRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Day templates"
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ type: 'spring', damping: 28, stiffness: 350 }}
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0, bottom: 0.8 }}
@@ -49,7 +55,7 @@ export default function TemplateSheet({ onClose }) {
           onClose();
         }
       }}
-      className="fixed inset-0 bg-[#FAFBFC] dark:bg-[#0A0A0C] z-50 flex flex-col"
+      className="fixed inset-0 bg-[#F0F1EE] dark:bg-[#0A0A0C] z-50 flex flex-col"
     >
       <div className="px-6 pt-16 pb-4 bg-white/90 dark:bg-[#141416]/90 backdrop-blur-xl z-20 border-b border-gray-100 dark:border-[#1f1f23] rounded-b-[32px] shadow-sm">
         <div className="flex justify-between items-center mb-2">
@@ -64,7 +70,7 @@ export default function TemplateSheet({ onClose }) {
         
         {/* Save Current Day */}
         {hasMeals ? (
-          <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] border border-gray-100 dark:border-[#1f1f23] shadow-sm space-y-4">
+          <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] space-y-4">
             <div className="flex items-center gap-3 text-gray-900 dark:text-white font-bold">
               <Save size={20} /> Save Today as Template
             </div>
@@ -99,7 +105,7 @@ export default function TemplateSheet({ onClose }) {
           ) : (
             <div className="space-y-3">
               {Object.entries(templates).map(([tId, tpl]) => (
-                <div key={tId} className="flex justify-between items-center p-4 rounded-[24px] bg-white dark:bg-[#141416] border border-gray-100 dark:border-[#1f1f23] shadow-sm">
+                <div key={tId} className="flex justify-between items-center p-4 rounded-[24px] bg-white dark:bg-[#141416]">
                   <div className="font-bold text-base">{tpl.name}</div>
                   <button 
                     onClick={() => handleLoad(tId)}

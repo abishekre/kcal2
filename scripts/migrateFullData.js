@@ -12,7 +12,15 @@ envRaw.split('\n').forEach(line => {
   }
 });
 
-const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
+// After applying rls_hardening.sql, the anon key can no longer write to
+// global_foods/robot_messages/insight_texts — this script needs the
+// project's service_role key (Project Settings → API) instead. Add
+// SUPABASE_SERVICE_ROLE_KEY to .env.local; falls back to the anon key so
+// this still runs before that migration is applied.
+const supabase = createClient(
+  env.VITE_SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY
+);
 
 const INSIGHTS_DB = [
   { key: 'morning_empty_early', good: "Start your day right. A protein-rich breakfast sets the metabolic tone.", normal: "Breakfast window is open. Awaiting initial logs.", bad: "Don't even think about skipping breakfast and complaining about hunger later." },
