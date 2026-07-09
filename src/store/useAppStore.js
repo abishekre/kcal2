@@ -62,13 +62,18 @@ export const useAppStore = create((set, get) => ({
           },
           targetWeight: settings.profile?.targetWeight ?? 70,
           targetDate: settings.profile?.targetDate ?? defaultTargetDate(),
-          theme: settings.profile?.theme ?? 'dark',
+          theme: settings.profile?.theme ?? 'system',
+          unitSystem: settings.profile?.unitSystem ?? 'metric',
           onboardingComplete: settings.profile?.onboardingComplete ?? false,
           localNoticeShown: settings.profile?.localNoticeShown ?? false,
           goal: settings.goal ?? 'cut',
           activityLevel: settings.activity_level ?? 'sedentary',
           robotMode: settings.robot_mode ?? 'good',
         });
+        // Restore the synced water goal if the account has one.
+        if (settings.profile?.waterTarget != null) {
+          useWaterStore.getState().setWaterTarget(settings.profile.waterTarget, { silent: true });
+        }
       }
     } catch (e) {
       console.error('Settings fetch failed', e);
@@ -84,7 +89,7 @@ export const useAppStore = create((set, get) => ({
       ]);
     } catch (e) {
       console.error("Hydration failed", e);
-      toast.error('Some data failed to load. Pull to refresh.');
+      toast.error('Some data failed to load. Reload the app to try again.');
     }
 
     // Retry anything left dirty from a previous session (e.g. the tab was
@@ -109,6 +114,10 @@ export const useAppStore = create((set, get) => ({
         theme: s.theme,
         onboardingComplete: s.onboardingComplete,
         localNoticeShown: s.localNoticeShown,
+        // Stored in the settings JSON blob (no schema change) so the water
+        // goal roams across devices like the rest of the profile.
+        waterTarget: useWaterStore.getState().waterTarget,
+        unitSystem: s.unitSystem,
       },
       goal: s.goal,
       activity_level: s.activityLevel,
@@ -142,10 +151,15 @@ export const useAppStore = create((set, get) => ({
   setLocalNoticeShown: (v) => { set({ localNoticeShown: v }); get().sync(); },
 
   // Theme & Robot
-  theme: 'dark',
+  theme: 'system',
   setTheme: (t) => { set({ theme: t }); get().sync(); },
   robotMode: 'good',
   setRobotMode: (m) => { set({ robotMode: m }); get().sync(); },
+
+  // Unit system for display only (engine/storage stay metric). Synced via
+  // the settings blob so it roams across devices.
+  unitSystem: 'metric', // 'metric' | 'imperial'
+  setUnitSystem: (u) => { set({ unitSystem: u }); get().sync(); },
 
   // UI State (NOT persisted)
   uiStatus: 'low',
@@ -154,6 +168,9 @@ export const useAppStore = create((set, get) => ({
   setActiveSheet: (s) => set({ activeSheet: s }),
   activeMealTarget: null,
   setActiveMealTarget: (m) => set({ activeMealTarget: m }),
+  // Which custom food is being edited (opens CustomFoodSheet in edit mode).
+  editingFoodId: null,
+  setEditingFoodId: (id) => set({ editingFoodId: id }),
   activePage: 'dashboard',
   setActivePage: (p) => set({ activePage: p }),
   selectedDate: getTodayKey(),
@@ -183,7 +200,7 @@ export const useAppStore = create((set, get) => ({
       goal: 'cut',
       targetWeight: 70,
       targetDate: defaultTargetDate(),
-      theme: 'dark',
+      theme: 'system',
       onboardingComplete: false,
       localNoticeShown: false,
       activityLevel: 'sedentary',

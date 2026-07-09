@@ -7,9 +7,9 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  * and focus restoration on close. Attach the returned ref to the sheet's
  * outer element (which should also carry role="dialog" aria-modal="true").
  *
- * This is the same behavior SheetWrapper implements internally, extracted
- * so sheets that render their own outer motion.div (rather than going
- * through SheetWrapper) get the same keyboard/focus handling.
+ * Every sheet renders its own outer motion.div and calls this hook directly
+ * for consistent keyboard/focus handling, rather than going through a shared
+ * wrapper component.
  */
 export function useSheetA11y(onClose) {
   const ref = useRef(null);

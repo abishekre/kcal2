@@ -16,6 +16,16 @@ export const useFoodStore = create(
   persist(
     (set, get) => ({
       customFoods: {},
+      // Last quantity the user logged for each food id — so the next time they
+      // add it, the app defaults to *their* usual portion instead of a generic
+      // 1 serving / 100g. Kept local (device-level) and small.
+      lastQty: {},
+
+      rememberQty: (foodId, qty) => {
+        if (!foodId || !(qty > 0)) return;
+        set((state) => ({ lastQty: { ...state.lastQty, [foodId]: qty } }));
+      },
+      getLastQty: (foodId) => get().lastQty[foodId],
 
       hydrateFoods: async (userId) => {
         if (!userId) return;
@@ -89,6 +99,36 @@ export const useFoodStore = create(
           toast.error('Failed to save custom food');
         }
         return safeId;
+      },
+
+      // Edits an existing custom food in place (same key) so every past log of
+      // it updates too. Optimistic with rollback, mirroring addCustomFood.
+      updateCustomFood: async (id, foodData) => {
+        const userId = useAppStore.getState().userId;
+        if (!userId) {
+          toast.error('You must be signed in to edit foods');
+          return;
+        }
+        const previous = get().customFoods[id];
+        if (previous === undefined) {
+          toast.error('That food no longer exists');
+          return;
+        }
+        set((state) => ({ customFoods: { ...state.customFoods, [id]: foodData } }));
+        try {
+          const { error } = await supabase.from('custom_foods').upsert({
+            user_id: userId,
+            food_key: id,
+            data: foodData,
+          }, { onConflict: 'user_id,food_key' });
+          if (error) {
+            set((state) => ({ customFoods: { ...state.customFoods, [id]: previous } }));
+            toast.error('Failed to save changes');
+          }
+        } catch {
+          set((state) => ({ customFoods: { ...state.customFoods, [id]: previous } }));
+          toast.error('Failed to save changes');
+        }
       },
 
       // Reuses an existing custom food with identical name/macros instead of
@@ -210,12 +250,12 @@ export const useFoodStore = create(
       },
 
       clearAll: () => {
-        set({ customFoods: {} });
+        set({ customFoods: {}, lastQty: {} });
       },
     }),
     {
       name: 'kcal-foods',
-      partialize: (state) => ({ customFoods: state.customFoods }),
+      partialize: (state) => ({ customFoods: state.customFoods, lastQty: state.lastQty }),
     }
   )
 );

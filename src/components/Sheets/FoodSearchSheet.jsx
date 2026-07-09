@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, Plus, Minus, PlusCircle, Flame, Loader2 } from 'lucide-react';
+import { X, Search, Plus, Minus, PlusCircle, Flame, Loader2, Pencil } from 'lucide-react';
 import { useFoodStore } from '../../store/useFoodStore';
 import { useLedgerStore, getInitialDayRecord } from '../../store/useLedgerStore';
 import { useAppStore } from '../../store/useAppStore';
@@ -24,6 +24,37 @@ function matchScore(name, q) {
   return 3;
 }
 
+// Bounded Levenshtein distance for typo tolerance.
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const curr = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    prev = curr;
+  }
+  return prev[n];
+}
+
+// Typo-tolerant match used only as a fallback when strict substring search
+// finds nothing — so "chiken" still surfaces "Chicken Curry". Allows 1 edit
+// for short queries, 2 for longer ones, against the whole name or any word.
+function fuzzyMatches(name, q) {
+  const threshold = q.length <= 4 ? 1 : 2;
+  if (levenshtein(name, q) <= threshold) return true;
+  for (const word of name.split(/\s+/)) {
+    if (levenshtein(word, q) <= threshold) return true;
+    if (word.length > q.length && levenshtein(word.slice(0, q.length), q) <= threshold) return true;
+  }
+  return false;
+}
+
 export default function FoodSearchSheet({ mealKey, onClose }) {
   const sheetRef = useSheetA11y(onClose);
   const [search, setSearch] = useState('');
@@ -34,10 +65,13 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
 
   const selectedDate = useAppStore(state => state.selectedDate);
   const setActiveSheet = useAppStore(state => state.setActiveSheet);
+  const setEditingFoodId = useAppStore(state => state.setEditingFoodId);
 
   const getFullDB = useFoodStore(state => state.getFullDB);
   const getForYouFoods = useFoodStore(state => state.getForYouFoods);
   const getFrequentFoods = useFoodStore(state => state.getFrequentFoods);
+  const rememberQty = useFoodStore(state => state.rememberQty);
+  const getLastQty = useFoodStore(state => state.getLastQty);
   const customFoods = useFoodStore(state => state.customFoods);
   // customFoods is read inside getFullDB() via the store's get(), not as a
   // literal argument — without it in the deps, a newly-created custom food
@@ -92,9 +126,18 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
       const q = debouncedSearch.toLowerCase();
       // Rank matches by relevance, then by how often the user eats them, then
       // by shorter name (a closer overall match) — not raw insertion order.
-      entries = entries
+      let scored = entries
         .filter(([, item]) => item.name.toLowerCase().includes(q))
-        .map(([id, item]) => [id, item, matchScore(item.name.toLowerCase(), q)])
+        .map(([id, item]) => [id, item, matchScore(item.name.toLowerCase(), q)]);
+      // Typo tolerance: only if strict substring search found nothing, fall
+      // back to fuzzy matching so a misspelling still returns results instead
+      // of an empty "no foods found" wall.
+      if (scored.length === 0 && q.length >= 3) {
+        scored = entries
+          .filter(([, item]) => fuzzyMatches(item.name.toLowerCase(), q))
+          .map(([id, item]) => [id, item, 3]);
+      }
+      entries = scored
         .sort((a, b) =>
           a[2] - b[2] ||
           (freqRank.get(a[0]) ?? Infinity) - (freqRank.get(b[0]) ?? Infinity) ||
@@ -133,10 +176,13 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
   const handleQuickAdd = (fk, currentQty) => {
     const item = fullDB[fk];
     if (!item) return;
-    const defaultQty = item.unit === 'g' ? 100 : 1;
+    // Default to the user's usual portion for this food, falling back to a
+    // sensible generic (100g for gram foods, else 1 serving).
+    const defaultQty = getLastQty(fk) ?? (item.unit === 'g' ? 100 : 1);
     triggerHaptic('success');
     addFoodToMeal(selectedDate, mealKey, fk, defaultQty);
-    toast.success(currentQty > 0 ? `+1 more ${item.name}` : `Added ${item.name}`);
+    rememberQty(fk, defaultQty);
+    toast.success(currentQty > 0 ? `+${defaultQty} more ${item.name}` : `Added ${item.name}`);
   };
 
   const handleOpenEditor = (fk, currentQty) => {
@@ -145,7 +191,7 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
       setActiveFoodKey(null);
     } else {
       setActiveFoodKey(fk);
-      setActiveQty(currentQty || (fullDB[fk]?.unit === 'g' ? 100 : 1));
+      setActiveQty(currentQty || getLastQty(fk) || (fullDB[fk]?.unit === 'g' ? 100 : 1));
     }
   };
 
@@ -159,6 +205,7 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
     }
     triggerHaptic('success');
     addFoodToMeal(selectedDate, mealKey, fk, validation.value);
+    rememberQty(fk, validation.value);
     toast.success(`Added to ${mealKey}`);
     // Keep sheet open for multi-food logging — do NOT call onClose()
     setActiveFoodKey(null);
@@ -349,8 +396,9 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
                           initial={{ opacity: 0, height: 0, marginTop: 0 }}
                           animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
                           exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                          className="overflow-hidden border-t border-gray-200 dark:border-[#2c2c2e] pt-4 flex items-center justify-between"
+                          className="overflow-hidden border-t border-gray-200 dark:border-[#2c2c2e] pt-4 flex flex-col gap-3"
                         >
+                          <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2 bg-white dark:bg-[#0A0A0C] rounded-full p-1 border border-gray-200 dark:border-[#2c2c2e]">
                             <button
                               onClick={(e) => {
@@ -405,6 +453,16 @@ export default function FoodSearchSheet({ mealKey, onClose }) {
                           >
                             Add <span className="opacity-75">{Math.round(item.cals * (item.unit === 'g' ? activeQty / 100 : activeQty))} kcal</span>
                           </button>
+                          </div>
+                          {customFoods[fk] && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); setEditingFoodId(fk); setActiveSheet('customFood'); }}
+                              aria-label={`Edit ${item.name} details`}
+                              className="self-start flex items-center gap-1.5 text-[12px] font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors px-1"
+                            >
+                              <Pencil size={13} /> Edit food details
+                            </button>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>

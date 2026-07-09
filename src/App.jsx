@@ -16,6 +16,8 @@ const ProgressPage = lazy(() => import('./pages/ProgressPage'));
 const SettingsSheet = lazy(() => import('./components/Sheets/SettingsSheet'));
 const WeightLogSheet = lazy(() => import('./components/Sheets/WeightLogSheet'));
 const ScienceSheet = lazy(() => import('./components/Sheets/ScienceSheet'));
+const AchievementsSheet = lazy(() => import('./components/Sheets/AchievementsSheet'));
+const WeeklyRecapSheet = lazy(() => import('./components/Sheets/WeeklyRecapSheet'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 
 /**
@@ -194,6 +196,8 @@ export default function App() {
             <AnimatePresence>
               {activeSheet === 'weightLog' && <WeightLogSheet onClose={() => setActiveSheet(null)} />}
               {activeSheet === 'science' && <ScienceSheet onClose={() => setActiveSheet(null)} />}
+              {activeSheet === 'achievements' && <AchievementsSheet onClose={() => setActiveSheet(null)} />}
+              {activeSheet === 'weeklyRecap' && <WeeklyRecapSheet onClose={() => setActiveSheet(null)} />}
             </AnimatePresence>
 
             <BottomNav activePage={activePage} onNavigate={setActivePage} />

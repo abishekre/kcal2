@@ -78,10 +78,19 @@ export default function Auth() {
     let authError;
 
     try {
-      if (mode === 'magic-link') {
-        const { error } = await supabase.auth.signInWithOtp({ 
-          email, 
-          options: { emailRedirectTo: window.location.origin } 
+      if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin,
+        });
+        authError = error;
+        if (!error) {
+          // Neutral wording avoids revealing whether the email is registered.
+          setSuccess('If an account exists for that email, a password reset link is on its way.');
+        }
+      } else if (mode === 'magic-link') {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin }
         });
         authError = error;
         if (!error) {
@@ -132,7 +141,7 @@ export default function Auth() {
         setFailedAttempts(0);
         setError('Too many failed attempts. Please wait 30 seconds.');
       }
-    } else if (mode === 'magic-link' || mode === 'sign-up') {
+    } else if (mode === 'magic-link' || mode === 'sign-up' || mode === 'reset') {
       setFailedAttempts(0);
       triggerHaptic('success');
     }
@@ -165,8 +174,9 @@ export default function Auth() {
           <KcalMark size={64} badge className="mb-6 shadow-xl rotate-3" />
           <h1 className="text-3xl font-black tracking-tight mb-2 text-gray-900 dark:text-white">Kcal</h1>
           <p className="text-gray-500 dark:text-gray-400 font-medium text-center">
-            {mode === 'sign-up' ? "Create an account to save your data." : 
-             mode === 'magic-link' ? "Get a login link sent to your inbox." : 
+            {mode === 'sign-up' ? "Create an account to save your data." :
+             mode === 'magic-link' ? "Get a login link sent to your inbox." :
+             mode === 'reset' ? "Enter your email and we'll send a reset link." :
              "Welcome back. Time to log."}
           </p>
         </motion.div>
@@ -280,10 +290,11 @@ export default function Auth() {
             disabled={loading || isInCooldown}
             className="w-full py-4 bg-gray-900 dark:bg-emerald-500 text-white rounded-[20px] font-black tracking-wide flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : 
+            {loading ? <Loader2 className="animate-spin" size={20} /> :
              isInCooldown ? `Wait ${cooldownRemaining}s` :
-             mode === 'sign-up' ? "Create Account" : 
-             mode === 'magic-link' ? "Send Magic Link" : 
+             mode === 'sign-up' ? "Create Account" :
+             mode === 'magic-link' ? "Send Magic Link" :
+             mode === 'reset' ? "Send Reset Link" :
              "Sign In"}
           </button>
         </motion.form>
@@ -300,10 +311,23 @@ export default function Auth() {
                   Create an account
                 </button>
               </p>
-              <button type="button" disabled={loading} onClick={() => switchMode('magic-link')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-medium text-xs transition-colors disabled:opacity-50">
-                Or sign in with a magic link instead
-              </button>
+              <div className="flex items-center gap-4">
+                <button type="button" disabled={loading} onClick={() => switchMode('reset')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-medium text-xs transition-colors disabled:opacity-50">
+                  Forgot password?
+                </button>
+                <button type="button" disabled={loading} onClick={() => switchMode('magic-link')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-medium text-xs transition-colors disabled:opacity-50">
+                  Magic link instead
+                </button>
+              </div>
             </>
+          )}
+          {mode === 'reset' && (
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              Remembered it?{' '}
+              <button type="button" disabled={loading} onClick={() => switchMode('sign-in')} className="font-bold text-gray-900 dark:text-white hover:underline disabled:opacity-50">
+                Back to sign in
+              </button>
+            </p>
           )}
           {mode === 'sign-up' && (
             <p className="text-gray-500 dark:text-gray-400 font-medium">

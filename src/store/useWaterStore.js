@@ -65,8 +65,12 @@ export const useWaterStore = create(
         get()._queueSync(dateKey);
       },
 
-      setWaterTarget: (n) => {
+      setWaterTarget: (n, opts = {}) => {
         set({ waterTarget: Math.max(1, Math.min(MAX_GLASSES, n)) });
+        // Push the change up to user_settings so it roams across devices.
+        // `silent` skips this when the value is being restored from the
+        // cloud during hydration (would otherwise re-upload what we just read).
+        if (!opts.silent) useAppStore.getState().sync();
       },
 
       hydrateWater: async (userId) => {

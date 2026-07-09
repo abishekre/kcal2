@@ -5,8 +5,10 @@ import { ChevronLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useWaterStore } from '../store/useWaterStore';
 import { ACTIVITY_LEVELS, GOAL_CONFIGS, calculateGoalCalories, projectTimeline, getRecommendedWaterGlasses } from '../engine/projection';
+import { validateGoalTarget } from '../utils/validation';
 import { triggerHaptic } from '../utils/haptics';
 import ScienceSheet from '../components/Sheets/ScienceSheet';
+import HealthWarning from '../components/Core/HealthWarning';
 import KcalMark from '../components/Core/KcalMark';
 
 const STEPS = [
@@ -111,6 +113,7 @@ export default function Onboarding() {
   );
 
   const timeline = projectTimeline(formData.weight, formData.targetWeight, projection.weeklyChange);
+  const goalTargetIssue = validateGoalTarget(formData.goal, formData.weight, formData.targetWeight);
 
   return (
     <div className="fixed inset-0 bg-[#F0F1EE] dark:bg-[#0A0A0C] flex flex-col z-50">
@@ -338,7 +341,7 @@ export default function Onboarding() {
                   <div className="bg-white dark:bg-[#141416] p-5 rounded-[24px] flex items-center justify-between shadow-sm">
                     <span className="font-bold text-gray-500 dark:text-gray-400">Age</span>
                     <div className="flex items-center gap-4">
-                      <button aria-label="Decrease age" onClick={() => updateForm({ age: Math.max(12, formData.age - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
+                      <button aria-label="Decrease age" onClick={() => updateForm({ age: Math.max(13, formData.age - 1) })} className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 font-bold">-</button>
                       <div className="flex items-baseline w-24 justify-center">
                         <input 
                           type="text"
@@ -350,7 +353,7 @@ export default function Onboarding() {
                             else if (e.target.value === '') updateForm({ age: '' });
                           }}
                           onBlur={() => {
-                            if (!formData.age || formData.age < 12) updateForm({ age: 25 });
+                            if (!formData.age || formData.age < 13) updateForm({ age: 25 });
                           }}
                           className="text-[24px] font-black w-14 text-right tabular-nums bg-transparent outline-none dark:text-white border-none"
                         />
@@ -453,6 +456,9 @@ export default function Onboarding() {
                         {timeline.feasibility === 'unrealistic' ? 'Invalid Target' : `${timeline.weeks} weeks`}
                       </p>
                     </div>
+                    {!goalTargetIssue.valid && (
+                      <p role="alert" className="text-rose-500 font-bold text-[13px] mt-4 text-center leading-relaxed">{goalTargetIssue.error}</p>
+                    )}
                   </div>
                 ) : (
                   <div className="bg-white dark:bg-[#141416] p-8 rounded-[32px] flex flex-col items-center shadow-sm">
@@ -535,6 +541,11 @@ export default function Onboarding() {
                   </div>
                 </motion.div>
 
+                {(projection.status === 'dangerouslyLow' || projection.status === 'dangerous' || projection.status === 'aggressive' || projection.proteinWarning) && (
+                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
+                    <HealthWarning status={projection.status} proteinWarning={projection.proteinWarning} />
+                  </motion.div>
+                )}
               </div>
             )}
           </motion.div>

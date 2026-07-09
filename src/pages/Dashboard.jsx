@@ -160,11 +160,20 @@ export default function Dashboard() {
   const streakCount = useMemo(() => getStreak(ledger, fullDB, projection.targetCals), [ledger, fullDB, projection.targetCals]);
 
   // Celebrate reaching a new streak milestone (3, 7, 14, … days). prevStreakRef
-  // guards against firing on mount or on unrelated re-renders.
+  // guards against firing on mount; celebratedRef ensures each milestone fires
+  // at most once per session, so toggling food across a boundary (e.g. 7 → 6 →
+  // 7 by removing then re-adding) doesn't re-toast it.
   const prevStreakRef = useRef(null);
+  const celebratedRef = useRef(new Set());
   useEffect(() => {
     const prev = prevStreakRef.current;
-    if (prev !== null && streakCount > prev && MILESTONE_DAYS.has(streakCount)) {
+    if (
+      prev !== null &&
+      streakCount > prev &&
+      MILESTONE_DAYS.has(streakCount) &&
+      !celebratedRef.current.has(streakCount)
+    ) {
+      celebratedRef.current.add(streakCount);
       triggerHaptic('success');
       toast.success(`🔥 ${streakCount}-day streak!`);
     }
@@ -317,7 +326,7 @@ export default function Dashboard() {
                 </button>
               </div>
             ) : (
-              <div ref={sliderRef} className="w-full bg-white dark:bg-[#141416] h-[72px] rounded-[36px] relative overflow-hidden flex items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-[#1f1f23]" role="slider" aria-label="Slide to lock day" aria-valuemin={0} aria-valuemax={100}>
+              <div ref={sliderRef} className="w-full bg-white dark:bg-[#141416] h-[72px] rounded-[36px] relative overflow-hidden flex items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-[#1f1f23]" role="slider" aria-label="Slide to lock day" aria-valuemin={0} aria-valuemax={100} aria-valuenow={0}>
                 <span className="absolute w-full text-center font-black text-gray-400 tracking-widest text-sm pointer-events-none uppercase" aria-hidden="true">Slide to Lock Day</span>
                 <motion.div 
                   drag="x" dragConstraints={sliderRef} dragSnapToOrigin onDragEnd={(e, i) => handleCommitDay(i)}

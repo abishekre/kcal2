@@ -9,6 +9,8 @@ import { triggerHaptic } from '../../utils/haptics';
 import { GOAL_CONFIGS, ACTIVITY_LEVELS, calculateGoalCalories } from '../../engine/projection';
 import { toast } from '../../lib/toast';
 import { VALIDATION } from '../../utils/constants';
+import HealthWarning from '../Core/HealthWarning';
+import { validateGoalTarget } from '../../utils/validation';
 
 const GOAL_COLORS = {
   rose: { container: 'border-rose-500 bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', dot: 'bg-rose-500' },
@@ -87,12 +89,17 @@ export default function SettingsSheet() {
 
   const theme = useAppStore(state => state.theme);
   const setTheme = useAppStore(state => state.setTheme);
+  const unitSystem = useAppStore(state => state.unitSystem);
+  const setUnitSystem = useAppStore(state => state.setUnitSystem);
   const robotMode = useAppStore(state => state.robotMode);
   const setRobotMode = useAppStore(state => state.setRobotMode);
   const signOut = useAppStore(state => state.signOut);
   const deleteAccountData = useAppStore(state => state.deleteAccountData);
 
   const projection = useMemo(() => calculateGoalCalories(profile, goal, activityLevel), [profile, goal, activityLevel]);
+  // Flags a goal that contradicts the target weight (e.g. Cut with a target
+  // above current weight) so the plan can never be silently self-contradictory.
+  const goalTargetIssue = validateGoalTarget(goal, profile.weight, targetWeight);
 
   // Two-step confirmation for destructive actions
   const [confirmingReset, setConfirmingReset] = useState(false);
@@ -301,6 +308,9 @@ export default function SettingsSheet() {
                     <span className="text-sm font-bold text-gray-500">kg</span>
                   </div>
                 </div>
+                {!goalTargetIssue.valid && (
+                  <p role="alert" className="text-rose-500 font-bold text-xs mb-4 -mt-1">{goalTargetIssue.error}</p>
+                )}
                 <div className="flex flex-col gap-2">
                   <label htmlFor="activity-level" className="font-bold text-sm">Activity Level</label>
                   <div className="relative">
@@ -337,6 +347,10 @@ export default function SettingsSheet() {
                   <span className="font-black text-emerald-900 dark:text-emerald-400">Daily Target</span>
                   <span className="font-black text-xl text-emerald-600 dark:text-emerald-400 tabular-nums">{projection.targetCals} kcal</span>
                 </div>
+              </div>
+
+              <div className="mt-4">
+                <HealthWarning status={projection.status} proteinWarning={projection.proteinWarning} />
               </div>
             </Panel>
           )}
@@ -378,6 +392,7 @@ export default function SettingsSheet() {
 
           {panel === 'appearance' && (
             <Panel title="Appearance" onBack={goBack}>
+              <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">Theme</label>
               <div className="flex bg-white dark:bg-[#141416] p-1.5 rounded-[20px] border border-gray-100 dark:border-[#1f1f23]" role="radiogroup" aria-label="Select theme">
                 {[
                   { id: 'light', icon: Sun, label: 'Light' },
@@ -393,6 +408,25 @@ export default function SettingsSheet() {
                   >
                     <t.icon size={18} />
                     <span className="text-[10px] font-bold uppercase tracking-widest">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 mt-6 mb-2 px-1">Units</label>
+              <div className="flex bg-white dark:bg-[#141416] p-1.5 rounded-[20px] border border-gray-100 dark:border-[#1f1f23]" role="radiogroup" aria-label="Select unit system">
+                {[
+                  { id: 'metric', label: 'Metric', sub: 'kg' },
+                  { id: 'imperial', label: 'Imperial', sub: 'lbs' },
+                ].map(u => (
+                  <button
+                    key={u.id}
+                    role="radio"
+                    aria-checked={unitSystem === u.id}
+                    onClick={() => { triggerHaptic(); setUnitSystem(u.id); }}
+                    className={`flex-1 flex flex-col items-center gap-0.5 py-3 rounded-[16px] transition-colors ${unitSystem === u.id ? 'bg-gray-100 dark:bg-[#1f1f23] text-gray-900 dark:text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-[#1f1f23]/50'}`}
+                  >
+                    <span className="text-[13px] font-bold">{u.label}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{u.sub}</span>
                   </button>
                 ))}
               </div>

@@ -16,6 +16,7 @@ import {
   MAX_PROJECTION_WEEKS,
   METABOLIC_ADAPTATION_PER_KG,
   MIN_WEEKLY_CHANGE_KG,
+  STREAK_FREEZES,
   VALIDATION,
   WATER_GLASS_ML,
 } from '../utils/constants';
@@ -309,6 +310,32 @@ export function getHealthStatus(targetCals, weeklyChange, gender) {
 }
 
 /**
+ * Human-facing copy for each health status. `null` entries (moderate/optimal)
+ * are healthy and render no warning. Used to surface safety guidance wherever
+ * a target is shown, so a dangerous plan is never presented silently.
+ * `severity` drives the UI color: 'danger' (red) vs 'warn' (amber).
+ */
+export const HEALTH_STATUS_INFO = {
+  dangerouslyLow: {
+    severity: 'danger',
+    title: 'This target is too low to be safe',
+    message: 'Under ~800 kcal/day is not safe without medical supervision. Please pick a gentler goal or a higher target weight — slow and steady protects your health and your results.',
+  },
+  dangerous: {
+    severity: 'danger',
+    title: 'This pace may be unsafe',
+    message: 'This target is below the recommended daily minimum or implies very fast weight change. Easing off protects lean muscle and is far more sustainable.',
+  },
+  aggressive: {
+    severity: 'warn',
+    title: 'That’s an aggressive pace',
+    message: 'This works short-term, but a more moderate rate is easier to stick with and better preserves muscle. Consider a smaller deficit.',
+  },
+  moderate: null,
+  optimal: null,
+};
+
+/**
  * Recommends a daily water intake in glasses, scaled to body weight
  * (~35ml/kg, a common general guideline) instead of a flat number for
  * everyone. This is still a general default, not a personalized clinical
@@ -354,10 +381,11 @@ export function hasLoggedFood(record) {
  * @param {number} targetCals - Daily calorie target
  * @returns {number} Current streak length in days
  */
-export function getStreak(ledger, fullDB, targetCals) {
+export function getStreak(ledger, fullDB, targetCals, maxFreezes = STREAK_FREEZES) {
   if (!targetCals || targetCals <= 0) return 0;
 
   let streak = 0;
+  let freezes = maxFreezes;
   const today = new Date();
   const maxLookback = 365;
 
@@ -375,10 +403,14 @@ export function getStreak(ledger, fullDB, targetCals) {
       continue;
     }
 
-    // A completed past day must be logged AND on target to extend the run;
-    // a missed day or an over-target day ends it.
     if (onTargetLoggedDay) {
       streak++;
+    } else if (freezes > 0) {
+      // Streak freeze: forgive a single slipped day (missed or over target)
+      // so one bad day doesn't erase weeks of progress and trigger the
+      // "I broke it, why bother" spiral. A frozen day doesn't add to the
+      // count — it just bridges the gap.
+      freezes -= 1;
     } else {
       break;
     }

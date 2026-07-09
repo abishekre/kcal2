@@ -79,32 +79,66 @@ describe('getStreak', () => {
     expect(getStreak(ledger, fullDB, 2000)).toBe(3);
   });
 
-  it('ends the streak on a completed day that is logged but over target', () => {
+  it('forgives a single slipped day (streak freeze) but breaks on the second', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2024, 0, 10, 12, 0, 0));
+
+    const fullDB = { food: { cals: 100, p: 0, c: 0, f: 0 } };
+    // today under (+1), yesterday over target (frozen, bridged), then under
+    // (+1), then a gap that exhausts the single freeze and ends the run.
+    const ledger = {
+      '2024-01-10': { meals: { morning: { food: 5 } } }, // +1
+      '2024-01-09': { meals: { morning: { food: 30 } } }, // over → frozen (bridged)
+      '2024-01-08': { meals: { morning: { food: 5 } } }, // +1
+      // 2024-01-07 missing → second slip, no freeze left → break
+      '2024-01-06': { meals: { morning: { food: 5 } } },
+    };
+
+    expect(getStreak(ledger, fullDB, 2000)).toBe(2);
+  });
+
+  it('bridges a single missing day so the streak survives a busy day', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2024, 0, 10, 12, 0, 0));
 
     const fullDB = { food: { cals: 100, p: 0, c: 0, f: 0 } };
     const ledger = {
-      '2024-01-10': { meals: { morning: { food: 5 } } }, // today under → +1
-      '2024-01-09': { meals: { morning: { food: 30 } } }, // 3000 over → breaks
-      '2024-01-08': { meals: { morning: { food: 5 } } },
+      '2024-01-10': { meals: { morning: { food: 5 } } }, // +1
+      // 2024-01-09 missing → frozen (bridged)
+      '2024-01-08': { meals: { morning: { food: 5 } } }, // +1
+      '2024-01-07': { meals: { morning: { food: 5 } } }, // +1
+    };
+
+    expect(getStreak(ledger, fullDB, 2000)).toBe(3);
+  });
+
+  it('breaks immediately on two consecutive missed days', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2024, 0, 10, 12, 0, 0));
+
+    const fullDB = { food: { cals: 100, p: 0, c: 0, f: 0 } };
+    const ledger = {
+      '2024-01-10': { meals: { morning: { food: 5 } } }, // +1
+      // 2024-01-09 missing → frozen
+      // 2024-01-08 missing → no freeze left → break
+      '2024-01-07': { meals: { morning: { food: 5 } } },
     };
 
     expect(getStreak(ledger, fullDB, 2000)).toBe(1);
   });
 
-  it('ends the streak on a day with no food logged (a gap)', () => {
+  it('respects an explicit zero-freeze override (strict streak)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2024, 0, 10, 12, 0, 0));
 
     const fullDB = { food: { cals: 100, p: 0, c: 0, f: 0 } };
     const ledger = {
-      '2024-01-10': { meals: { morning: { food: 5 } } }, // today → +1
-      // 2024-01-09 missing entirely → gap
+      '2024-01-10': { meals: { morning: { food: 5 } } }, // +1
+      '2024-01-09': { meals: { morning: { food: 30 } } }, // over → breaks with no freeze
       '2024-01-08': { meals: { morning: { food: 5 } } },
     };
 
-    expect(getStreak(ledger, fullDB, 2000)).toBe(1);
+    expect(getStreak(ledger, fullDB, 2000, 0)).toBe(1);
   });
 
   it('does not let an over-target today erase the streak from prior days', () => {

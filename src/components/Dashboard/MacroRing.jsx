@@ -1,5 +1,6 @@
 
 import { motion } from 'framer-motion';
+import CountUp from '../Core/CountUp';
 
 export default function MacroRing({ consumption, target, goal }) {
   const cals = consumption?.cals || 0;
@@ -110,18 +111,11 @@ export default function MacroRing({ consumption, target, goal }) {
             carries an equivalent aria-label; this avoids double-announcing
             the same numbers to screen readers. */}
         <div aria-hidden="true" className="text-center z-10 flex flex-col items-center">
-          <motion.div
-            key={cals}
-            initial={{ scale: 0.95 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-          >
-            <h2 className={`text-[64px] leading-[1] font-black tracking-tighter tabular-nums ${
-              isOver ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'
-            }`}>
-              {cals}
-            </h2>
-          </motion.div>
+          <h2 className={`text-[64px] leading-[1] font-black tracking-tighter tabular-nums ${
+            isOver ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'
+          }`}>
+            <CountUp value={cals} />
+          </h2>
           <span className="text-[16px] text-gray-400 font-bold mt-1 tabular-nums tracking-wide">
             / {targetCals} kcal
           </span>

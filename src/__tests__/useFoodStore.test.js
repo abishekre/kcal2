@@ -43,11 +43,29 @@ describe('useFoodStore', () => {
   it('removes a custom food successfully', () => {
     useFoodStore.getState().addCustomFood('test_1', { name: 'Food 1', cals: 100 });
     useFoodStore.getState().addCustomFood('test_2', { name: 'Food 2', cals: 200 });
-    
+
     useFoodStore.getState().removeCustomFood('test_1');
     const store = useFoodStore.getState();
-    
+
     expect(store.customFoods['test_1']).toBeUndefined();
     expect(store.customFoods['test_2']).toBeDefined();
+  });
+
+  it('remembers the last logged quantity per food, ignoring invalid values', () => {
+    useFoodStore.setState({ lastQty: {} });
+    const s = useFoodStore.getState();
+
+    s.rememberQty('white_rice', 250);
+    expect(useFoodStore.getState().getLastQty('white_rice')).toBe(250);
+
+    // A newer portion overwrites the remembered one.
+    s.rememberQty('white_rice', 180);
+    expect(useFoodStore.getState().getLastQty('white_rice')).toBe(180);
+
+    // Non-positive / missing values are ignored, not stored.
+    s.rememberQty('white_rice', 0);
+    s.rememberQty('', 100);
+    expect(useFoodStore.getState().getLastQty('white_rice')).toBe(180);
+    expect(useFoodStore.getState().getLastQty('unlogged_food')).toBeUndefined();
   });
 });

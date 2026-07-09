@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Minus, Plus, Scale, Save, CalendarDays, AlertTriangle } from 'lucide-react';
+import { X, Minus, Plus, Scale, Save, CalendarDays, AlertTriangle, Trash2 } from 'lucide-react';
 import { useWeightStore } from '../../store/useWeightStore';
 import { useAppStore } from '../../store/useAppStore';
 import { formatDateLong } from '../../utils/dates';
 import { triggerHaptic } from '../../utils/haptics';
+import { toast } from '../../lib/toast';
 import { useSheetA11y } from '../../hooks/useSheetA11y';
+import { kgToLbs, lbsToKg, weightUnit } from '../../utils/units';
 
 export default function WeightLogSheet({ onClose }) {
   const sheetRef = useSheetA11y(onClose);
   const selectedDate = useAppStore(state => state.selectedDate);
   const profile = useAppStore(state => state.profile);
   const setProfile = useAppStore(state => state.setProfile);
+  const unitSystem = useAppStore(state => state.unitSystem);
 
   const logWeight = useWeightStore(state => state.logWeight);
+  const removeWeight = useWeightStore(state => state.removeWeight);
   const getWeightForDate = useWeightStore(state => state.getWeightForDate);
   const getWeightTrend = useWeightStore(state => state.getWeightTrend);
   const checkAnomaly = useWeightStore(state => state.checkAnomaly);
@@ -49,10 +53,20 @@ export default function WeightLogSheet({ onClose }) {
     onClose();
   };
 
+  // Weight is always stored in kg; these convert to/from the user's display
+  // unit at 1-decimal precision (so imperial keeps ~0.1 lb granularity).
+  const toDisp = (kg) => (kg === '' || kg == null ? '' : Math.round((unitSystem === 'imperial' ? kgToLbs(kg) : kg) * 10) / 10);
+  const toKg = (disp) => Math.round((unitSystem === 'imperial' ? lbsToKg(disp) : disp) * 10) / 10;
+  const wu = weightUnit(unitSystem);
+
+  // adjust `amount` is in the DISPLAY unit (±1 lb or ±1 kg).
   const adjust = (amount) => {
     triggerHaptic('light');
     setConfirmAnomaly(false);
-    setWeight(prev => Math.round((prev + amount) * 10) / 10);
+    setWeight(prev => {
+      const cur = prev === '' || prev == null ? 0 : toDisp(prev);
+      return toKg(Math.round((cur + amount) * 10) / 10);
+    });
   };
 
   return (
@@ -104,15 +118,15 @@ export default function WeightLogSheet({ onClose }) {
             </button>
             
             <div className="flex items-baseline w-40 justify-center">
-              <input 
+              <input
                 type="text"
                 inputMode="decimal"
-                value={weight}
-                aria-label="Weight in kg"
+                value={toDisp(weight)}
+                aria-label={`Weight in ${wu}`}
                 onChange={(e) => {
                   setConfirmAnomaly(false);
                   const val = parseFloat(e.target.value);
-                  if (!isNaN(val)) setWeight(val);
+                  if (!isNaN(val)) setWeight(toKg(val));
                   else if (e.target.value === '') setWeight('');
                 }}
                 onBlur={() => {
@@ -120,7 +134,7 @@ export default function WeightLogSheet({ onClose }) {
                 }}
                 className="text-6xl font-black tabular-nums tracking-tighter text-center bg-transparent outline-none w-full border-none"
               />
-              <span className="text-xl font-bold text-gray-400 ml-1">kg</span>
+              <span className="text-xl font-bold text-gray-400 ml-1">{wu}</span>
             </div>
             
             <button 
@@ -166,7 +180,21 @@ export default function WeightLogSheet({ onClose }) {
               {recentWeights.map((log, index) => (
                 <div key={log.date} className={`flex justify-between items-center p-4 ${index !== recentWeights.length - 1 ? 'border-b border-gray-100 dark:border-[#1f1f23]' : ''}`}>
                   <span className="font-bold text-sm text-gray-500">{formatDateLong(log.date)}</span>
-                  <span className="font-black tabular-nums">{log.weight.toFixed(1)} kg</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-black tabular-nums">{toDisp(log.weight)} {wu}</span>
+                    <button
+                      onClick={() => {
+                        triggerHaptic('medium');
+                        const removed = log.weight;
+                        removeWeight(log.date);
+                        toast.undo(`Removed ${removed.toFixed(1)} kg log`, { onUndo: () => logWeight(log.date, removed) });
+                      }}
+                      aria-label={`Delete weigh-in from ${formatDateLong(log.date)}`}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

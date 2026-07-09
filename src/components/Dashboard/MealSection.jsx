@@ -11,6 +11,10 @@ const MEAL_CONFIG = {
   dinner:  { label: 'Dinner',  emoji: '🌙', accent: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-500/10', border: 'border-violet-100 dark:border-violet-500/20' },
 };
 
+// Neutral styling for user-created meal slots — so a "Midnight Snack" doesn't
+// borrow the Morning sunrise icon/amber accent by falling back to it.
+const CUSTOM_MEAL_CONFIG = { label: 'Snack', emoji: '🍽️', accent: 'text-gray-500 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-white/5', border: 'border-gray-200 dark:border-[#2c2c2e]' };
+
 export default function MealSection({
   mealKey,
   title,
@@ -28,7 +32,7 @@ export default function MealSection({
   const [collapsed, setCollapsed] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const foodEntries = Object.entries(foods || {}).filter(([, qty]) => qty > 0);
-  const config = MEAL_CONFIG[mealKey] || MEAL_CONFIG.morning;
+  const config = MEAL_CONFIG[mealKey] || CUSTOM_MEAL_CONFIG;
 
   // Calculate meal total
   const mealTotal = foodEntries.reduce((sum, [fk, qty]) => {

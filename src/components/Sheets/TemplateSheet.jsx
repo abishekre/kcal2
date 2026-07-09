@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Copy, Check } from 'lucide-react';
+import { X, Save, Copy, Check, Trash2 } from 'lucide-react';
 import { useLedgerStore } from '../../store/useLedgerStore';
 import { useAppStore } from '../../store/useAppStore';
 import { triggerHaptic } from '../../utils/haptics';
@@ -13,9 +13,11 @@ export default function TemplateSheet({ onClose }) {
   const templates = useLedgerStore(state => state.templates);
   const saveTemplate = useLedgerStore(state => state.saveTemplate);
   const loadTemplate = useLedgerStore(state => state.loadTemplate);
+  const deleteTemplate = useLedgerStore(state => state.deleteTemplate);
 
   const [templateName, setTemplateName] = useState('');
   const [toast, setToast] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const currentRecord = ledger[selectedDate];
   const hasMeals = currentRecord && Object.values(currentRecord.meals).some(meal => Object.keys(meal).length > 0);
@@ -106,13 +108,33 @@ export default function TemplateSheet({ onClose }) {
             <div className="space-y-3">
               {Object.entries(templates).map(([tId, tpl]) => (
                 <div key={tId} className="flex justify-between items-center p-4 rounded-[24px] bg-white dark:bg-[#141416]">
-                  <div className="font-bold text-base">{tpl.name}</div>
-                  <button 
-                    onClick={() => handleLoad(tId)}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 dark:bg-[#0A0A0C] hover:bg-gray-100 dark:hover:bg-[#1c1c1e] transition-colors active:scale-95"
-                  >
-                    <Copy size={16} />
-                  </button>
+                  <div className="font-bold text-base min-w-0 truncate mr-3">{tpl.name}</div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {confirmDeleteId === tId ? (
+                      <button
+                        onClick={() => { triggerHaptic('heavy'); deleteTemplate(tId); setConfirmDeleteId(null); }}
+                        aria-label={`Confirm delete template ${tpl.name}`}
+                        className="h-10 px-3 rounded-full flex items-center justify-center bg-red-500 text-white font-bold text-xs active:scale-95"
+                      >
+                        Delete?
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => { triggerHaptic('medium'); setConfirmDeleteId(tId); setTimeout(() => setConfirmDeleteId(c => c === tId ? null : c), 3000); }}
+                        aria-label={`Delete template ${tpl.name}`}
+                        className="w-10 h-10 rounded-full flex items-center justify-center bg-red-50 dark:bg-red-500/10 text-red-500 hover:text-red-600 transition-colors active:scale-95"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleLoad(tId)}
+                      aria-label={`Load template ${tpl.name}`}
+                      className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 dark:bg-[#0A0A0C] hover:bg-gray-100 dark:hover:bg-[#1c1c1e] transition-colors active:scale-95"
+                    >
+                      <Copy size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

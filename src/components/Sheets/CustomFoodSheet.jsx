@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { useFoodStore } from '../../store/useFoodStore';
+import { useAppStore } from '../../store/useAppStore';
 import { triggerHaptic } from '../../utils/haptics';
 import { FOOD_CATEGORIES } from '../../data/foods';
 import { toast } from '../../lib/toast';
@@ -16,17 +17,32 @@ const MACRO_COLORS = {
 };
 
 export default function CustomFoodSheet({ onClose }) {
-  const sheetRef = useSheetA11y(onClose);
   const addCustomFood = useFoodStore(state => state.addCustomFood);
+  const updateCustomFood = useFoodStore(state => state.updateCustomFood);
+  const customFoods = useFoodStore(state => state.customFoods);
+  const editingFoodId = useAppStore(state => state.editingFoodId);
+  const setEditingFoodId = useAppStore(state => state.setEditingFoodId);
+  const isEditing = !!editingFoodId;
 
-  const [form, setForm] = useState({
-    name: '',
-    cals: '',
-    p: '',
-    c: '',
-    f: '',
-    unit: 'serving',
-    category: 'breakfast'
+  // Clearing the edit target on close keeps a later "create food" from
+  // accidentally reopening in edit mode.
+  const close = () => { setEditingFoodId(null); onClose(); };
+  const sheetRef = useSheetA11y(close);
+
+  const [form, setForm] = useState(() => {
+    const existing = editingFoodId ? customFoods[editingFoodId] : null;
+    if (existing) {
+      return {
+        name: existing.name || '',
+        cals: existing.cals != null ? String(existing.cals) : '',
+        p: existing.p ? String(existing.p) : '',
+        c: existing.c ? String(existing.c) : '',
+        f: existing.f ? String(existing.f) : '',
+        unit: existing.unit || 'serving',
+        category: existing.category || 'breakfast',
+      };
+    }
+    return { name: '', cals: '', p: '', c: '', f: '', unit: 'serving', category: 'breakfast' };
   });
   const [error, setError] = useState('');
 
@@ -71,18 +87,23 @@ export default function CustomFoodSheet({ onClose }) {
     }
 
     triggerHaptic('success');
-    const customId = `custom_${crypto.randomUUID()}`;
-    addCustomFood(customId, {
+    const payload = {
       name: form.name.trim(),
       cals: calsResult.value,
       p: pNum,
       c: cNum,
       f: fNum,
       unit: form.unit,
-      category: form.category
-    });
-    toast.success(`"${form.name.trim()}" created`);
-    onClose();
+      category: form.category,
+    };
+    if (isEditing) {
+      updateCustomFood(editingFoodId, payload);
+      toast.success(`"${payload.name}" updated`);
+    } else {
+      addCustomFood(`custom_${crypto.randomUUID()}`, payload);
+      toast.success(`"${payload.name}" created`);
+    }
+    close();
   };
 
   const updateForm = (field, val) => {
@@ -113,22 +134,22 @@ export default function CustomFoodSheet({ onClose }) {
       onDragEnd={(e, info) => {
         if (info.offset.y > 100 || info.velocity.y > 500) {
           triggerHaptic('light');
-          onClose();
+          close();
         }
       }}
       className="fixed inset-0 bg-[#F0F1EE] dark:bg-[#0A0A0C] z-50 overflow-y-auto"
       ref={sheetRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Create custom food"
+      aria-label={isEditing ? 'Edit custom food' : 'Create custom food'}
       onKeyDown={handleKeyDown}
     >
       <div className="p-6 pb-4 sticky top-0 bg-[#F0F1EE]/90 dark:bg-[#0A0A0C]/90 backdrop-blur-xl z-20">
         <div className="flex justify-between items-center pt-4 mb-6">
-          <h2 className="text-3xl font-black tracking-tighter">Create Food</h2>
+          <h2 className="text-3xl font-black tracking-tighter">{isEditing ? 'Edit Food' : 'Create Food'}</h2>
           <button
-            onClick={() => { triggerHaptic('light'); onClose(); }}
-            aria-label="Close create food sheet"
+            onClick={() => { triggerHaptic('light'); close(); }}
+            aria-label={isEditing ? 'Close edit food sheet' : 'Close create food sheet'}
             className="p-3 bg-white dark:bg-[#141416] rounded-full shadow-sm border border-gray-100 dark:border-[#1f1f23]"
           >
             <X size={20} />
@@ -249,10 +270,10 @@ export default function CustomFoodSheet({ onClose }) {
 
         <button
           onClick={handleSave}
-          aria-label="Save custom food"
+          aria-label={isEditing ? 'Save changes' : 'Save custom food'}
           className="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-5 rounded-[24px] font-black flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-lg"
         >
-          <Save size={20} /> Save Food
+          <Save size={20} /> {isEditing ? 'Save Changes' : 'Save Food'}
         </button>
       </div>
     </motion.div>

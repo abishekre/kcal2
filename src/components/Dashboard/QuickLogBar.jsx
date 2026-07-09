@@ -28,6 +28,8 @@ function currentMealKey(hour) {
  */
 function QuickLogBar({ dateKey, fullDB }) {
   const getForYouFoods = useFoodStore((s) => s.getForYouFoods);
+  const rememberQty = useFoodStore((s) => s.rememberQty);
+  const getLastQty = useFoodStore((s) => s.getLastQty);
   const ledger = useLedgerStore((s) => s.ledger);
   const addFoodToMeal = useLedgerStore((s) => s.addFoodToMeal);
   const dittoYesterday = useLedgerStore((s) => s.dittoYesterday);
@@ -48,9 +50,10 @@ function QuickLogBar({ dateKey, fullDB }) {
   if (chips.length === 0 && !canRepeatDay) return null;
 
   const handleQuickAdd = (id, food) => {
-    const qty = food.unit === 'g' || food.unit === 'ml' ? 100 : 1;
+    const qty = getLastQty(id) ?? (food.unit === 'g' || food.unit === 'ml' ? 100 : 1);
     triggerHaptic('success');
     addFoodToMeal(dateKey, mealKey, id, qty);
+    rememberQty(id, qty);
     toast.success(`Added ${food.name} to ${mealLabel}`);
   };
 

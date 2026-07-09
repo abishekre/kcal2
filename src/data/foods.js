@@ -35,6 +35,9 @@ export const BASE_FOOD_DB = {
   cornflakes: { name: 'Cornflakes (with milk)', cals: 200, p: 6, c: 35, f: 3, unit: 'bowl', category: 'breakfast', emoji: '🥣' },
   oats_porridge: { name: 'Oats Porridge', cals: 150, p: 5, c: 27, f: 3, unit: 'bowl', category: 'breakfast', emoji: '🥣' },
   egg_omelette: { name: 'Egg Omelette (2 eggs)', cals: 180, p: 12, c: 1, f: 14, unit: 'item', category: 'breakfast', emoji: '🍳' },
+  scrambled_eggs: { name: 'Scrambled Eggs (2 eggs)', cals: 200, p: 13, c: 2, f: 15, unit: 'item', category: 'breakfast', emoji: '🍳' },
+  pancakes: { name: 'Pancakes (2, Plain)', cals: 175, p: 5, c: 28, f: 5, unit: 'item', category: 'breakfast', emoji: '🥞' },
+  waffle: { name: 'Waffle (Plain)', cals: 220, p: 6, c: 27, f: 10, unit: 'item', category: 'breakfast', emoji: '🧇' },
   paratha_plain: { name: 'Plain Paratha', cals: 260, p: 5, c: 35, f: 10, unit: 'item', category: 'breakfast', emoji: '🫓' },
   aloo_paratha: { name: 'Aloo Paratha', cals: 300, p: 6, c: 45, f: 10, unit: 'item', category: 'breakfast', emoji: '🫓' },
   paneer_paratha: { name: 'Paneer Paratha', cals: 320, p: 12, c: 35, f: 14, unit: 'item', category: 'breakfast', emoji: '🫓' },
@@ -72,6 +75,7 @@ export const BASE_FOOD_DB = {
   bread_slice: { name: 'White Bread', cals: 75, p: 2, c: 14, f: 1, unit: 'slice', category: 'breads', emoji: '🍞' },
   bun: { name: 'Bun', cals: 150, p: 4, c: 28, f: 2, unit: 'item', category: 'breads', emoji: '🥖' },
   tortilla_wrap: { name: 'Tortilla Wrap', cals: 170, p: 4, c: 28, f: 4, unit: 'item', category: 'breads', emoji: '🌯' },
+  garlic_bread: { name: 'Garlic Bread (1 slice)', cals: 150, p: 3, c: 18, f: 7, unit: 'item', category: 'breads', emoji: '🍞' },
 
   // Curries
   sambar: { name: 'Sambar', cals: 80, p: 4, c: 12, f: 2, unit: 'bowl', category: 'curries', emoji: '🍲' },
@@ -99,6 +103,20 @@ export const BASE_FOOD_DB = {
   egg_roast: { name: 'Egg Roast (2 eggs)', cals: 240, p: 14, c: 12, f: 15, unit: 'bowl', category: 'curries', emoji: '🥘' },
   stew_veg: { name: 'Veg Stew', cals: 180, p: 3, c: 15, f: 12, unit: 'bowl', category: 'curries', emoji: '🍲' },
   stew_chicken: { name: 'Chicken Stew', cals: 280, p: 16, c: 12, f: 18, unit: 'bowl', category: 'curries', emoji: '🥘' },
+
+  // Per-100g twins of the curries above — same recipe, weighable precision
+  // instead of a fixed "1 bowl" serving. Separate keys (not a unit change on
+  // the originals) since the bowl-based entries may already be logged in a
+  // user's history; changing their unit/cals in place would silently
+  // corrupt those past days' totals.
+  chicken_curry_100g: { name: 'Chicken Curry (per 100g)', cals: 96, p: 6, c: 3, f: 6, unit: 'g', category: 'curries', emoji: '🥘' },
+  butter_chicken_100g: { name: 'Butter Chicken (per 100g)', cals: 160, p: 7, c: 6, f: 12, unit: 'g', category: 'curries', emoji: '🥘' },
+  egg_curry_100g: { name: 'Egg Curry (per 100g)', cals: 88, p: 6, c: 4, f: 6, unit: 'g', category: 'curries', emoji: '🥘' },
+  paneer_butter_masala_100g: { name: 'Paneer Butter Masala (per 100g)', cals: 140, p: 5, c: 6, f: 11, unit: 'g', category: 'curries', emoji: '🥘' },
+  dal_tadka_100g: { name: 'Dal Tadka (per 100g)', cals: 72, p: 3, c: 9, f: 2, unit: 'g', category: 'curries', emoji: '🍲' },
+  rajma_100g: { name: 'Rajma Masala (per 100g)', cals: 88, p: 4, c: 12, f: 2, unit: 'g', category: 'curries', emoji: '🥘' },
+  mutton_curry_100g: { name: 'Mutton Curry (per 100g)', cals: 120, p: 7, c: 3, f: 9, unit: 'g', category: 'curries', emoji: '🥘' },
+  fish_curry_100g: { name: 'Fish Curry (per 100g)', cals: 72, p: 6, c: 2, f: 4, unit: 'g', category: 'curries', emoji: '🥘' },
 
   // Protein
   chicken_breast: { name: 'Chicken Breast (Raw)', cals: 165, p: 31, c: 0, f: 3, unit: 'g', category: 'protein', emoji: '🍗' },
@@ -139,6 +157,10 @@ export const BASE_FOOD_DB = {
   beetroot: { name: 'Beetroot', cals: 43, p: 1, c: 9, f: 0, unit: 'g', category: 'vegetables', emoji: '🍠' },
   sweet_potato: { name: 'Sweet Potato', cals: 86, p: 1, c: 20, f: 0, unit: 'g', category: 'vegetables', emoji: '🍠' },
   potato_boiled: { name: 'Potato (Boiled)', cals: 87, p: 1, c: 20, f: 0, unit: 'g', category: 'vegetables', emoji: '🥔' },
+  mashed_potato: { name: 'Mashed Potatoes', cals: 105, p: 2, c: 16, f: 4, unit: 'g', category: 'vegetables', emoji: '🥔' },
+  baked_potato: { name: 'Baked Potato (with skin)', cals: 93, p: 2, c: 21, f: 0, unit: 'g', category: 'vegetables', emoji: '🥔' },
+  coleslaw: { name: 'Coleslaw', cals: 150, p: 1, c: 10, f: 12, unit: 'g', category: 'vegetables', emoji: '🥗' },
+  greek_salad: { name: 'Greek Salad', cals: 110, p: 3, c: 6, f: 8, unit: 'bowl', category: 'vegetables', emoji: '🥗' },
 
   // Fast Food
   chicken_burger: { name: 'Chicken Burger', cals: 450, p: 20, c: 45, f: 20, unit: 'item', category: 'fastfood', emoji: '🍔' },
@@ -212,6 +234,7 @@ export const BASE_FOOD_DB = {
   chips_potato: { name: 'Potato Chips', cals: 160, p: 2, c: 15, f: 10, unit: 'bowl', category: 'snacks', emoji: '🥔' },
   roasted_chana: { name: 'Roasted Chana', cals: 120, p: 6, c: 18, f: 2, unit: 'bowl', category: 'snacks', emoji: '🧆' },
   trail_mix: { name: 'Trail Mix', cals: 140, p: 4, c: 12, f: 9, unit: 'bowl', category: 'snacks', emoji: '🥜' },
+  hummus: { name: 'Hummus', cals: 166, p: 8, c: 14, f: 10, unit: 'g', category: 'snacks', emoji: '🧆' },
 
   // Fitness
   whey_protein: { name: 'Whey Protein Isolate', cals: 110, p: 25, c: 1, f: 0, unit: 'scoop', category: 'fitness', emoji: '🥛' },
@@ -272,6 +295,7 @@ export const BASE_FOOD_DB = {
   fish_and_chips: { name: 'Fish & Chips', cals: 750, p: 25, c: 65, f: 40, unit: 'plate', category: 'international', emoji: '🍟' },
   pad_thai: { name: 'Pad Thai', cals: 500, p: 18, c: 65, f: 18, unit: 'plate', category: 'international', emoji: '🍜' },
   ramen: { name: 'Tonkotsu Ramen', cals: 650, p: 25, c: 60, f: 30, unit: 'bowl', category: 'international', emoji: '🍜' },
+  mac_and_cheese: { name: 'Mac and Cheese', cals: 310, p: 11, c: 32, f: 15, unit: 'bowl', category: 'international', emoji: '🧀' },
 };
 
 // A sensible everyday shortlist shown to brand-new users who have no logging

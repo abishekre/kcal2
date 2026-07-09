@@ -162,3 +162,8 @@ export const FASTING_PROTOCOLS = {
 // ── Timeline / Projection caps ──
 export const MAX_PROJECTION_WEEKS = 520; // 10 years
 export const MIN_WEEKLY_CHANGE_KG = 0.01;
+
+// ── Streak forgiveness ──
+// How many slipped days the current streak can absorb before it breaks — one
+// bad day shouldn't wipe out weeks of progress (retention + anti-restriction).
+export const STREAK_FREEZES = 1;
