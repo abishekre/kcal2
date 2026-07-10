@@ -6,11 +6,13 @@ import { useLedgerStore } from '../../store/useLedgerStore';
 import { useWeightStore } from '../../store/useWeightStore';
 import { useFoodStore } from '../../store/useFoodStore';
 import { triggerHaptic } from '../../utils/haptics';
-import { GOAL_CONFIGS, ACTIVITY_LEVELS, calculateGoalCalories } from '../../engine/projection';
+import { format } from 'date-fns';
+import { GOAL_CONFIGS, ACTIVITY_LEVELS, calculateGoalCalories, projectTimeline } from '../../engine/projection';
 import { toast } from '../../lib/toast';
 import { VALIDATION } from '../../utils/constants';
 import HealthWarning from '../Core/HealthWarning';
 import { validateGoalTarget } from '../../utils/validation';
+import { toDisplayWeight, fromDisplayWeight, weightUnit, kgToLbs } from '../../utils/units';
 
 const GOAL_COLORS = {
   rose: { container: 'border-rose-500 bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', dot: 'bg-rose-500' },
@@ -72,6 +74,42 @@ function NavRow({ icon: Icon, label, value, onClick, isFirst, isLast }) {
       </div>
       <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" aria-hidden="true" />
     </button>
+  );
+}
+
+/**
+ * A numeric input that lets you type freely (including clearing the field and
+ * intermediate values) and only clamps to [min,max] on blur. The old inputs
+ * rejected any out-of-range keystroke while being controlled by the stored
+ * value, which made them impossible to edit (typing "6" toward "65" was < the
+ * 20 min and got snapped back). `buf` holds the raw text while editing; when
+ * not editing it mirrors the external value.
+ */
+function NumberField({ value, min, max, integer = false, onCommit, id, ariaLabel, className }) {
+  const [buf, setBuf] = useState(null);
+  const shown = buf === null ? String(value) : buf;
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode={integer ? 'numeric' : 'decimal'}
+      value={shown}
+      aria-label={ariaLabel}
+      className={className}
+      onFocus={() => setBuf(String(value))}
+      onChange={(e) => setBuf(e.target.value.replace(/[^0-9.]/g, ''))}
+      onBlur={() => {
+        if (buf !== null && buf.trim() !== '') {
+          const n = Number(buf);
+          if (!Number.isNaN(n)) {
+            let v = integer ? Math.round(n) : Math.round(n * 10) / 10;
+            v = Math.max(min, Math.min(max, v));
+            onCommit(v);
+          }
+        }
+        setBuf(null);
+      }}
+    />
   );
 }
 
@@ -153,27 +191,27 @@ export default function SettingsSheet() {
     }
   }, []);
 
-  const handleProfileChange = (field, value) => {
-    const num = Number(value);
-    if (isNaN(num)) return;
+  const isImperial = unitSystem === 'imperial';
+  const wu = weightUnit(unitSystem);
+  const clampKg = (kg) => Math.max(VALIDATION.weight.min, Math.min(VALIDATION.weight.max, kg));
+  const weightBounds = isImperial
+    ? { min: Math.round(kgToLbs(VALIDATION.weight.min)), max: Math.round(kgToLbs(VALIDATION.weight.max)) }
+    : { min: VALIDATION.weight.min, max: VALIDATION.weight.max };
 
-    const ranges = {
-      height: { min: VALIDATION.height.min, max: VALIDATION.height.max },
-      weight: { min: VALIDATION.weight.min, max: VALIDATION.weight.max },
-      age: { min: VALIDATION.age.min, max: VALIDATION.age.max },
-    };
-
-    const range = ranges[field];
-    if (range && (num < range.min || num > range.max)) return;
-
-    setProfile({ [field]: num });
-  };
-
+  // Height stays metric (cm) — a dual ft/in editor is overkill here; weight and
+  // target weight follow the chosen unit system.
   const profileFields = [
-    { key: 'height', unit: 'cm', min: VALIDATION.height.min, max: VALIDATION.height.max },
-    { key: 'weight', unit: 'kg', min: VALIDATION.weight.min, max: VALIDATION.weight.max },
-    { key: 'age', unit: 'yrs', min: VALIDATION.age.min, max: VALIDATION.age.max },
+    { key: 'height', unit: 'cm', value: profile.height, min: VALIDATION.height.min, max: VALIDATION.height.max, integer: true, commit: (v) => setProfile({ height: v }) },
+    { key: 'weight', unit: wu, value: toDisplayWeight(profile.weight, unitSystem), min: weightBounds.min, max: weightBounds.max, integer: isImperial, commit: (v) => setProfile({ weight: clampKg(fromDisplayWeight(v, unitSystem)) }) },
+    { key: 'age', unit: 'yrs', value: profile.age, min: VALIDATION.age.min, max: VALIDATION.age.max, integer: true, commit: (v) => setProfile({ age: v }) },
   ];
+
+  // Daily energy delta + projected timeline for the goal preview.
+  const dailyDelta = projection.targetCals - projection.tdee; // < 0 = deficit
+  const timeline = projectTimeline(profile.weight, targetWeight, projection.weeklyChange);
+  const paceLabel = isImperial
+    ? `${Math.abs(kgToLbs(projection.weeklyChange)).toFixed(1)} ${wu}/wk`
+    : `${Math.abs(projection.weeklyChange).toFixed(2)} ${wu}/wk`;
 
   const goBack = () => setPanel('home');
 
@@ -235,21 +273,21 @@ export default function SettingsSheet() {
                     ))}
                   </div>
                 </div>
-                {profileFields.map(({ key, unit, min, max }) => (
+                {profileFields.map(({ key, unit, value, min, max, integer, commit }) => (
                   <div key={key} className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-[#1f1f23] last:border-0 last:pb-0">
                     <label htmlFor={`profile-${key}`} className="font-bold text-sm capitalize">{key}</label>
                     <div className="flex items-center gap-1">
-                      <input
+                      <NumberField
                         id={`profile-${key}`}
-                        type="number"
+                        value={value}
                         min={min}
                         max={max}
-                        value={profile[key]}
-                        onChange={e => handleProfileChange(key, e.target.value)}
-                        aria-label={`${key} in ${unit}`}
+                        integer={integer}
+                        onCommit={commit}
+                        ariaLabel={`${key} in ${unit}`}
                         className="bg-transparent text-right font-black text-xl w-20 outline-none tabular-nums text-gray-900 dark:text-white"
                       />
-                      <span className="text-xs font-bold text-gray-400 w-6">{unit}</span>
+                      <span className="text-xs font-bold text-gray-400 w-8">{unit}</span>
                     </div>
                   </div>
                 ))}
@@ -291,21 +329,17 @@ export default function SettingsSheet() {
                 <div className="flex justify-between items-center mb-4">
                   <label htmlFor="target-weight" className="font-bold text-sm">Target Weight</label>
                   <div className="flex items-center gap-1">
-                    <input
+                    <NumberField
                       id="target-weight"
-                      type="number"
-                      min={VALIDATION.weight.min}
-                      max={VALIDATION.weight.max}
-                      value={targetWeight}
-                      onChange={e => {
-                        const v = Number(e.target.value);
-                        if (!isNaN(v) && v >= VALIDATION.weight.min && v <= VALIDATION.weight.max) {
-                          setTargetWeight(v);
-                        }
-                      }}
+                      value={toDisplayWeight(targetWeight, unitSystem)}
+                      min={weightBounds.min}
+                      max={weightBounds.max}
+                      integer={isImperial}
+                      onCommit={(v) => setTargetWeight(clampKg(fromDisplayWeight(v, unitSystem)))}
+                      ariaLabel={`Target weight in ${wu}`}
                       className="bg-transparent text-right font-black text-xl w-20 outline-none tabular-nums text-gray-900 dark:text-white"
                     />
-                    <span className="text-sm font-bold text-gray-500">kg</span>
+                    <span className="text-sm font-bold text-gray-500">{wu}</span>
                   </div>
                 </div>
                 {!goalTargetIssue.valid && (
@@ -347,6 +381,34 @@ export default function SettingsSheet() {
                   <span className="font-black text-emerald-900 dark:text-emerald-400">Daily Target</span>
                   <span className="font-black text-xl text-emerald-600 dark:text-emerald-400 tabular-nums">{projection.targetCals} kcal</span>
                 </div>
+
+                {/* Deficit / surplus + projected timeline to the target weight */}
+                {goal === 'maintain' ? (
+                  <p className="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-500/30 text-[13px] font-medium text-emerald-800 dark:text-emerald-300">
+                    You're eating at maintenance (your exact TDEE), so your weight stays stable.
+                  </p>
+                ) : (
+                  <div className="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-500/30 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-emerald-900 dark:text-emerald-400">{dailyDelta < 0 ? 'Daily deficit' : 'Daily surplus'}</span>
+                      <span className="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{Math.abs(dailyDelta)} kcal/day</span>
+                    </div>
+                    <div className="flex justify-between items-center text-emerald-800 dark:text-emerald-300 text-sm">
+                      <span>Projected pace</span>
+                      <span className="font-bold tabular-nums">≈ {paceLabel}</span>
+                    </div>
+                    {goalTargetIssue.valid && timeline.date && timeline.feasibility !== 'unrealistic' ? (
+                      <div className="flex justify-between items-center text-emerald-800 dark:text-emerald-300 text-sm">
+                        <span>Reach {toDisplayWeight(targetWeight, unitSystem)}{wu} in</span>
+                        <span className="font-bold tabular-nums">{timeline.weeks} wk · {format(timeline.date, 'MMM d, yyyy')}</span>
+                      </div>
+                    ) : (
+                      <p className="text-[12px] font-medium text-amber-600 dark:text-amber-400 pt-1">
+                        Set a target weight in the right direction for your goal to see a timeline.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-4">
