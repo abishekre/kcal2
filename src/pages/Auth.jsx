@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, getAuthRedirectUrl } from '../lib/supabase';
 import { triggerHaptic } from '../utils/haptics';
 import KcalMark from '../components/Core/KcalMark';
 
@@ -80,7 +80,7 @@ export default function Auth() {
     try {
       if (mode === 'reset') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin,
+          redirectTo: getAuthRedirectUrl(),
         });
         authError = error;
         if (!error) {
@@ -90,7 +90,7 @@ export default function Auth() {
       } else if (mode === 'magic-link') {
         const { error } = await supabase.auth.signInWithOtp({
           email,
-          options: { emailRedirectTo: window.location.origin }
+          options: { emailRedirectTo: getAuthRedirectUrl() }
         });
         authError = error;
         if (!error) {
@@ -107,7 +107,7 @@ export default function Auth() {
         const { data, error } = await supabase.auth.signUp({ 
           email, 
           password,
-          options: { emailRedirectTo: window.location.origin }
+          options: { emailRedirectTo: getAuthRedirectUrl() }
         });
         authError = error;
         if (!error) {

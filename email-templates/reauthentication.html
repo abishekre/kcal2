@@ -1,0 +1,57 @@
+<!--
+  Kcal — "Reauthentication" email template
+  Paste into: Supabase → Authentication → Emails → "Reauthentication"
+  Variable used: {{ .Token }}  (a 6-digit one-time code, NOT a link)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Your verification code · Kcal</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F0F1EE;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0F1EE;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 6px 30px rgba(10,10,12,0.06);">
+          <tr>
+            <td align="center" style="padding:40px 40px 4px 40px;">
+              <img src="https://kcal.abishekre.in/icon-192.png" width="56" height="56" alt="Kcal" style="display:block;border-radius:16px;border:0;outline:none;text-decoration:none;">
+              <div style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#0A0A0C;margin-top:14px;">Kcal</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 40px 8px 40px;">
+              <h1 style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0A0A0C;margin:12px 0 10px;text-align:center;">Your verification code</h1>
+              <p style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#4b5563;text-align:center;margin:0 0 22px;">
+                Enter this code in Kcal to confirm it's you.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 24px;">
+                <tr>
+                  <td align="center" bgcolor="#F0F1EE" style="border-radius:16px;padding:18px 32px;">
+                    <div style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:34px;font-weight:800;letter-spacing:8px;color:#10b981;">{{ .Token }}</div>
+                  </td>
+                </tr>
+              </table>
+              <p style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#9ca3af;text-align:center;margin:0;">This code expires in 1 hour and can only be used once.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 40px 34px 40px;">
+              <div style="border-top:1px solid #f0f0ee;padding-top:20px;">
+                <p style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#9ca3af;text-align:center;margin:0;">
+                  Didn't try to do this? You can safely ignore this email.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:#b0b3ad;margin-top:20px;">Kcal · Track calories, macros &amp; more</div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
