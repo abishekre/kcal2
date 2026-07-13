@@ -7,6 +7,9 @@ import { useLedgerStore } from './useLedgerStore.js';
 import { useWeightStore } from './useWeightStore.js';
 import { useWaterStore } from './useWaterStore.js';
 import { useTimerStore } from './useTimerStore.js';
+import { useExerciseStore } from './useExerciseStore.js';
+import { useWorkoutStore } from './useWorkoutStore.js';
+import { useActiveWorkoutStore } from './useActiveWorkoutStore.js';
 import { toast } from '../lib/toast';
 import { flushAll } from '../lib/retrySync';
 import debounce from 'lodash/debounce';
@@ -26,7 +29,7 @@ const defaultTargetDate = () => {
 };
 
 // Tables that hold this user's own data — used by deleteAccountData().
-const USER_DATA_TABLES = ['ledger', 'custom_foods', 'custom_meal_configs', 'water_log', 'weight_log', 'user_settings'];
+const USER_DATA_TABLES = ['ledger', 'custom_foods', 'custom_meal_configs', 'water_log', 'weight_log', 'workout_sessions', 'custom_exercises', 'workout_routines', 'user_settings'];
 
 export const useAppStore = create((set, get) => ({
   session: null,
@@ -86,6 +89,8 @@ export const useAppStore = create((set, get) => ({
         useLedgerStore.getState().hydrateLedger(userId),
         useWeightStore.getState().hydrateWeights(userId),
         useWaterStore.getState().hydrateWater(userId),
+        useExerciseStore.getState().hydrateExercises(userId),
+        useWorkoutStore.getState().hydrateWorkouts(userId),
       ]);
     } catch (e) {
       console.error("Hydration failed", e);
@@ -185,6 +190,9 @@ export const useAppStore = create((set, get) => ({
     useFoodStore.getState().clearAll();
     useWaterStore.getState().clearAll();
     useTimerStore.getState().clearAll();
+    useExerciseStore.getState().clearAll();
+    useWorkoutStore.getState().clearAll();
+    useActiveWorkoutStore.getState().clearAll();
   },
 
   // Sign out: clears local device caches (cross-account leak prevention)

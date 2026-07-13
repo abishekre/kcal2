@@ -1,10 +1,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, TrendingUp, Settings } from 'lucide-react';
+import { LayoutDashboard, Dumbbell, TrendingUp, Settings } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 
 const TABS = [
   { key: 'dashboard', icon: LayoutDashboard, label: 'Home' },
+  { key: 'workouts', icon: Dumbbell, label: 'Workout' },
   { key: 'progress', icon: TrendingUp, label: 'Progress' },
   { key: 'settings', icon: Settings, label: 'Settings' },
 ];
@@ -40,7 +41,7 @@ export default function BottomNav({ activePage, onNavigate }) {
                 onNavigate(key);
               }}
               whileTap={{ scale: 0.92 }}
-              className={`relative flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-[20px] transition-colors min-h-[48px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#141416] ${
+              className={`relative flex items-center justify-center gap-2 px-4 py-3.5 rounded-[20px] transition-colors min-h-[48px] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#141416] ${
                 isActive
                   ? 'text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'

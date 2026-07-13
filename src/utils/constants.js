@@ -167,3 +167,13 @@ export const MIN_WEEKLY_CHANGE_KG = 0.01;
 // How many slipped days the current streak can absorb before it breaks — one
 // bad day shouldn't wipe out weeks of progress (retention + anti-restriction).
 export const STREAK_FREEZES = 1;
+
+// ── Workout tracking ──
+export const DEFAULT_REST_SECONDS = 90;      // rest timer default between sets
+// Estimated actual *working* time per completed strength set (the lift itself,
+// not the rest between sets) — used by the burn engine so idle gym time
+// doesn't inflate calories.
+export const STRENGTH_SET_SECONDS = 60;
+export const STRENGTH_DEFAULT_MET = 5.0;     // fallback MET for strength work
+// Per-session cap: flags absurd inputs (e.g. "300 min" typo'd for "30 min").
+export const WORKOUT_SANITY_MAX_KCAL = 1500;

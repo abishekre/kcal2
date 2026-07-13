@@ -13,6 +13,7 @@ import Auth from './pages/Auth';
 // Lazy load pages for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ProgressPage = lazy(() => import('./pages/ProgressPage'));
+const WorkoutsPage = lazy(() => import('./pages/WorkoutsPage'));
 const SettingsSheet = lazy(() => import('./components/Sheets/SettingsSheet'));
 const WeightLogSheet = lazy(() => import('./components/Sheets/WeightLogSheet'));
 const ScienceSheet = lazy(() => import('./components/Sheets/ScienceSheet'));
@@ -190,6 +191,7 @@ export default function App() {
             </AnimatePresence>
 
             {activePage === 'dashboard' && <Dashboard />}
+            {activePage === 'workouts' && <WorkoutsPage />}
             {activePage === 'progress' && <ProgressPage />}
             {activePage === 'settings' && <SettingsSheet />}
             
